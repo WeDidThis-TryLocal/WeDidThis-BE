@@ -39,6 +39,26 @@ class CheckBusinessRegNumberView(APIView):
             })
         else:
             return Response({'exists': exists})
+        
+# 닉네임 중복 확인 뷰
+@permission_classes([AllowAny])  # 누구나 접근 가능
+class CheckUserNameView(APIView):
+    def post(self, request):
+        user_type = request.data.get('user_type')
+        user_name = request.data.get('user_name')
+
+        if user_type == 0:  # 관광객
+            exists = User.objects.filter(user_name=user_name).exists()
+            if exists:
+                return Response({
+                    'exists': exists,
+                    'message': '중복된 닉네임이 존재합니다.'
+                })
+            else:
+                return Response({'exists': exists})
+        else:  # 농부
+            # 농부 등 관광객이 아닐 때는 중복체크 하지 않음
+            return Response({'exists': False, 'message': '중복확인 대상이 아닙니다.'})
 
 # 회원가입 뷰
 @permission_classes([AllowAny])  # 누구나 접근 가능
