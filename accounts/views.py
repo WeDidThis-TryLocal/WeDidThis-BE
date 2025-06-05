@@ -24,7 +24,10 @@ class CheckAccountIDView(APIView):
                 'message': '중복된 아이디가 존재합니다.'
             })
         else:
-            return Response({'exists': exists})
+            return Response({
+                'exists': exists,
+                'message': '사용 가능한 아이디입니다.'   
+            })
 
 # 사업자 번호 중복 확인 뷰
 @permission_classes([AllowAny])  # 누구나 접근 가능
@@ -38,7 +41,10 @@ class CheckBusinessRegNumberView(APIView):
                 'message': '이미 가입된 농가입니다.'
             })
         else:
-            return Response({'exists': exists})
+            return Response({
+                'exists': exists,
+                'message': '가입 가능한 농가입니다.'    
+            })
         
 # 닉네임 중복 확인 뷰
 @permission_classes([AllowAny])  # 누구나 접근 가능
@@ -46,7 +52,8 @@ class CheckUserNameView(APIView):
     def post(self, request):
         user_type = request.data.get('user_type')
         user_name = request.data.get('user_name')
-
+        
+        # user_type에 따라 처리 분기
         if user_type == 0:  # 관광객
             exists = User.objects.filter(user_name=user_name).exists()
             if exists:
@@ -55,7 +62,10 @@ class CheckUserNameView(APIView):
                     'message': '중복된 닉네임이 존재합니다.'
                 })
             else:
-                return Response({'exists': exists})
+                return Response({
+                    'exists': exists,
+                    'message': '사용 가능한 닉네임입니다.'
+                })
         else:  # 농부
             # 농부 등 관광객이 아닐 때는 중복체크 하지 않음
             return Response({'exists': False, 'message': '중복확인 대상이 아닙니다.'})
