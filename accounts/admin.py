@@ -32,6 +32,8 @@ class UserProfileCheck(admin.ModelAdmin):
         'user_type',         # 가입 유형
         'farm_name',         # 농장 이름
         'farm_address',      # 농장 주소
+        'representative_name', # 대표자 이름
+        'open_date',       # 개업일자
         'business_reg_number', # 사업자 등록 번호
         'created_at',        # 생성일
         'updated_at',        # 수정일
@@ -49,7 +51,7 @@ class UserProfileCheck(admin.ModelAdmin):
     add_fieldsets = (
         ('User Info', {
             'classes': ('wide',),
-            'fields': ('user', 'user_type', 'farm_name', 'farm_address', 'business_reg_number')
+            'fields': ('user', 'user_type', 'farm_name', 'farm_address', 'representative_name', 'open_date', 'business_reg_number')
         }),
     )
 

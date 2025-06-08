@@ -1,3 +1,5 @@
+import datetime
+
 from .models import UserProfile, User
 from rest_framework import serializers
 from django.contrib.auth import authenticate
@@ -34,6 +36,8 @@ class FarmerSignupSerializer(serializers.Serializer):
     password = serializers.CharField(write_only=True)
     name = serializers.CharField(max_length=50)
     farm_address = serializers.CharField(max_length=255)
+    representative_name = serializers.CharField(max_length=50)
+    open_date = serializers.DateField()
     business_reg_number = serializers.CharField(max_length=20)
 
     def validate_account_id(self, value):
@@ -58,6 +62,8 @@ class FarmerSignupSerializer(serializers.Serializer):
             user_type=UserProfile.FARMER,
             farm_name=validated_data['name'],
             farm_address=validated_data['farm_address'],
+            representative_name=validated_data['representative_name'],
+            open_date=validated_data['open_date'],
             business_reg_number=validated_data['business_reg_number'],
         )
         return user

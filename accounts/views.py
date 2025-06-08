@@ -21,7 +21,7 @@ class CheckAccountIDView(APIView):
         if exists:
             return Response({
                 'exists': exists,
-                'message': '중복된 아이디가 존재합니다.'
+                'message': '이미 사용 중인 아이디입니다.'
             })
         else:
             return Response({
@@ -38,12 +38,11 @@ class CheckBusinessRegNumberView(APIView):
         if exists:
             return Response({
                 'exists': exists,
-                'message': '이미 가입된 농가입니다.'
+                'message': '이미 가입된 사업자입니다.'
             })
         else:
             return Response({
-                'exists': exists,
-                'message': '가입 가능한 농가입니다.'    
+                'exists': exists, 
             })
         
 # 닉네임 중복 확인 뷰
@@ -59,7 +58,7 @@ class CheckUserNameView(APIView):
             if exists:
                 return Response({
                     'exists': exists,
-                    'message': '중복된 닉네임이 존재합니다.'
+                    'message': '이미 사용 중인 닉네임입니다.'
                 })
             else:
                 return Response({

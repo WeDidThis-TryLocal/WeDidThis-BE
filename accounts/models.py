@@ -80,6 +80,8 @@ class UserProfile(models.Model):
     # 농부 전용 필드
     farm_name = models.CharField('농장 이름', max_length=100, null=True, blank=True)
     farm_address = models.CharField('농장 주소', max_length=255, null=True, blank=True)
+    representative_name = models.CharField('대표자명', max_length=50, null=True, blank=True)
+    open_date = models.DateField('개업일자', null=True, blank=True)
     business_reg_number = models.CharField('사업자 등록 번호', max_length=20, null=True, blank=True)
     created_at = models.DateTimeField('프로필 생성일', auto_now_add=True)
     updated_at = models.DateTimeField('프로필 수정일', auto_now=True)
@@ -90,7 +92,7 @@ class UserProfile(models.Model):
         """
         if self.user_type == self.FARMER:
             missing = []
-            for field in ('farm_name', 'farm_address', 'business_reg_number'):
+            for field in ('farm_name', 'farm_address', 'representative_name', 'open_date', 'business_reg_number'):
                 if not getattr(self, field):
                     missing.append(field)
             if missing:
