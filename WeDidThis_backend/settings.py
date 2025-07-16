@@ -10,7 +10,9 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
+import os
 from pathlib import Path
+from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -44,6 +46,7 @@ INSTALLED_APPS = [
 
     # 생성한 앱
     'accounts',
+    'home',
 ]
 
 # accounts 앱에서 내가 설정한 User를 사용하겠다고 설정
@@ -145,3 +148,9 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# .env 파일 로드
+load_dotenv()
+
+# 카카오 REST API 키
+KAKAO_REST_API_KEY = os.getenv('KAKAO_REST_API_KEY')
