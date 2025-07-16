@@ -15,3 +15,6 @@ class PlaceItemAdmin(admin.ModelAdmin):
 class PlaceImageAdmin(admin.ModelAdmin):
     list_display = ('id', 'place', 'image_url')
     search_fields = ('place__name', 'image_url')
+
+admin.site.register(PlaceItem, PlaceItemAdmin)
+admin.site.register(PlaceImage, PlaceImageAdmin)  # Register PlaceImage model with admin
