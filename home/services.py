@@ -2,6 +2,7 @@ import requests
 from django.conf import settings
 
 KAKAO_API_KEY = getattr(settings, 'KAKAO_REST_API_KEY', None)
+TOUR_API_KEY = getattr(settings, 'TOUR_API_KEY', None)
 
 
 def get_address_from_place_name(place_name):
@@ -33,3 +34,29 @@ def get_coords_from_address(address):
             lon = round(float(coords['x']), 10)
             return lat, lon
     return None, None
+
+
+def get_tour_info(name):
+    # 관광 API: 장소명 -> 사진 리스트\
+    url = "http://apis.data.go.kr/B551011/PhotoGalleryService1/galleryDetailList1"
+    params = {
+        "numOfRows": 5,
+        "pageNo": 1,
+        "MobileOS": "IOS",
+        "MobileApp": "WeDidThis",
+        "title": name,
+        "_type": "json",
+        "serviceKey": TOUR_API_KEY
+    }
+    try:
+        resp = requests.get(url, params=params)
+        # print(resp.status_code)
+        # print(resp.headers.get("Content-Type"))
+        # print(resp.text)
+        data = resp.json()
+        items = data.get("response", {}).get("body", {}).get("items", {}).get("item", [])
+        image_urls = [item['galWebImageUrl'] for item in items if 'galWebImageUrl' in item]
+        return image_urls  # 최대 5개
+    except Exception as e:
+        print(f"사진 호출 실패: {e}")
+        return []

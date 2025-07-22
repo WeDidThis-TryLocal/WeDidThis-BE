@@ -154,3 +154,5 @@ load_dotenv()
 
 # 카카오 REST API 키
 KAKAO_REST_API_KEY = os.getenv('KAKAO_REST_API_KEY')
+# 관광 API 키
+TOUR_API_KEY = os.getenv('TOUR_API_KEY')

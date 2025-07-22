@@ -4,7 +4,7 @@ from rest_framework import status
 from .models import PlaceItem, PlaceImage
 from .serializers import PlaceItemSerializer
 from django.shortcuts import get_object_or_404
-from .services import get_address_from_place_name, get_coords_from_address
+from .services import get_address_from_place_name, get_coords_from_address, get_tour_info
 
 # 인증
 from rest_framework.decorators import permission_classes
@@ -47,7 +47,13 @@ class PlaceItemCreateView(APIView):
         serializer = PlaceItemSerializer(data=data)
         if serializer.is_valid():
             placeitem = serializer.save()
+            # 이미지가 있다면 PlaceImage 모델에 저장
             for url in request.data.get('images', []):
+                PlaceImage.objects.create(place=placeitem, image_url=url)
+
+            # 자동으로 관광공사 API에서 사진 가져오기
+            auto_images_url = get_tour_info(placeitem.name)
+            for url in auto_images_url:
                 PlaceImage.objects.create(place=placeitem, image_url=url)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
