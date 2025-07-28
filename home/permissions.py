@@ -10,6 +10,6 @@ class IsTouristUser(BasePermission):
             return False
         try:
             # user.profile.user_type이 'tourist'이면 관람객 (0)
-            return user.profile.user_type == 0
+            return user.profile.user_type == 'tourist'
         except AttributeError:
             return False

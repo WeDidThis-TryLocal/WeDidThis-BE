@@ -14,10 +14,32 @@ from .permissions import IsTouristUser
 
 @permission_classes([IsAuthenticated, IsTouristUser]) # 인증된 사용자만 접근 가능
 class PlaceItemDetailView(APIView):
-    def get(self, request, pk):
+    def get(self, request):
+        pk = request.GET.get('pk')  # 또는 request.GET.get('pk')
+        if not pk:
+            return Response({"error": "pk parameter is required as query parameter."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # user_type 확인
+        try:
+            user_type = request.user.profile.user_type
+        except AttributeError:
+            return Response({"error": "User profile or user_type not found."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # (필요 시 user_type에 따라 다른 처리 가능)
+        # 예를 들어, user_type == 0(관람객) 인 경우에만 진행하고 싶다면
+        if user_type != 'tourist':
+            return Response({"error": "You do not have permission to access this resource."}, status=status.HTTP_403_FORBIDDEN)
+
         placeitem = get_object_or_404(PlaceItem, pk=pk)
         serializer = PlaceItemSerializer(placeitem)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        data = serializer.data.copy()
+
+        # 자동으로 관광공사 API에서 사진 가져오기
+        auto_images_url = get_tour_info(placeitem.name)
+
+        # 응답에 자동 이미지 URL 추가
+        data['images'] = auto_images_url
+        return Response(data, status=status.HTTP_200_OK)
 
 
 @permission_classes([AllowAny])  # 인증 없이 접근 가능
@@ -34,6 +56,7 @@ class PlaceItemCreateView(APIView):
         # 2. 주소가 있고 위도/경도가 없으면: 주소 → 좌표 자동 변환
         if data.get('address') and (not data.get('latitude') or not data.get('longitude')):
             lat, lon = get_coords_from_address(data['address'])
+            print(f"[DEBUG] geocoded {data['address']} → {lat}, {lon}")
             if lat is not None and lon is not None:
                 data['latitude'] = lat
                 data['longitude'] = lon
@@ -65,8 +88,8 @@ class PlaceItemCreateView(APIView):
                 PlaceImage.objects.create(place=placeitem, image_url=url)
 
             # 자동으로 관광공사 API에서 사진 가져오기
-            auto_images_url = get_tour_info(placeitem.name)
-            for url in auto_images_url:
-                PlaceImage.objects.create(place=placeitem, image_url=url)
+            # auto_images_url = get_tour_info(placeitem.name)
+            # for url in auto_images_url:
+            #     PlaceImage.objects.create(place=placeitem, image_url=url)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
