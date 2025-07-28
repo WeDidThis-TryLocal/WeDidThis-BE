@@ -50,9 +50,9 @@ def get_tour_info(name):
     }
     try:
         resp = requests.get(url, params=params)
-        # print(resp.status_code)
-        # print(resp.headers.get("Content-Type"))
-        # print(resp.text)
+        print(resp.status_code)
+        print(resp.headers.get("Content-Type"))
+        print(resp.text)
         data = resp.json()
         items = data.get("response", {}).get("body", {}).get("items", {}).get("item", [])
         image_urls = [item['galWebImageUrl'] for item in items if 'galWebImageUrl' in item]

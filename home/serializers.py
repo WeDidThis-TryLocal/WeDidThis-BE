@@ -26,6 +26,10 @@ class PlaceItemSerializer(serializers.ModelSerializer):
             'period',
             'place',
             'organizer',
+            'parking',
+            'sales',
+            'toilet',
+            'coffee',
             'created_at',
             'updated_at',
             'images',  # Include related images
