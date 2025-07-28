@@ -44,6 +44,19 @@ class PlaceItemCreateView(APIView):
             data['period'] = None
             data['organizer'] = None
 
+        # 4. 체험(type='experience')이 아니면 toilet 필드 비우기
+        if data.get('type') != 'experience':
+            data['toilet'] = None
+
+        # 5. 카페(type='cafe')가 아니면 coffee 필드 비우기
+        if data.get('type') != 'cafe':
+            data['coffee'] = None
+
+        # 6. 체험 또는 카페가 아니면 parking, sales 필드 비우기
+        if data.get('type') not in ['experience', 'cafe']:
+            data['parking'] = None
+            data['sales'] = None
+
         serializer = PlaceItemSerializer(data=data)
         if serializer.is_valid():
             placeitem = serializer.save()
