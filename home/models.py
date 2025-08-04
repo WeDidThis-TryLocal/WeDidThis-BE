@@ -6,11 +6,13 @@ class PlaceItem(models.Model):
     EXPERIENCE = 'experience'
     FESTIVAL = 'festival'
     CAFE = 'cafe'
+    REST = 'rest'
     TYPE_CHOICES = [
         (TRIP, '관광'),
         (EXPERIENCE, '체험'),
         (FESTIVAL, '축제'),
         (CAFE, '카페'),
+        (REST, '숙소')
     ]
 
     type = models.CharField('유형', max_length=10, choices=TYPE_CHOICES)
