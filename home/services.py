@@ -1,8 +1,12 @@
 import requests
+import logging
 from django.conf import settings
+from .pictures import get_place_images
 
 KAKAO_API_KEY = getattr(settings, 'KAKAO_REST_API_KEY', None)
 TOUR_API_KEY = getattr(settings, 'TOUR_API_KEY', None)
+
+LOGGER = logging.getLogger(__name__)
 
 
 def get_address_from_place_name(place_name):
@@ -56,7 +60,10 @@ def get_tour_info(name):
         data = resp.json()
         items = data.get("response", {}).get("body", {}).get("items", {}).get("item", [])
         image_urls = [item['galWebImageUrl'] for item in items if 'galWebImageUrl' in item]
-        return image_urls  # 최대 5개
+        if image_urls:
+            return image_urls[:5]
+        LOGGER.info("관광공사 API에서 사진을 찾을 수 없습니다.: %s", name)
+        return get_place_images(name)
     except Exception as e:
-        print(f"사진 호출 실패: {e}")
-        return []
+        LOGGER.warning("관광공사 API 사진 호출 실패하였습니다. (%s), 데이터베이스로 대체합니다.", e)
+        return get_place_images(name)
