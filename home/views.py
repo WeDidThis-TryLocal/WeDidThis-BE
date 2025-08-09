@@ -76,8 +76,7 @@ class PlaceItemCreateView(APIView):
             data['coffee'] = None
 
         # 6. 체험 또는 카페가 아니면 parking, sales 필드 비우기
-        if data.get('type') not in ['experience', 'cafe', 'trip']:
-            data['parking'] = None
+        if data.get('type') not in ['experience', 'cafe']:
             data['sales'] = None
 
         serializer = PlaceItemSerializer(data=data)
