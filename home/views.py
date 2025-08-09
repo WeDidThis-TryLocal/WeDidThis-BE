@@ -15,9 +15,9 @@ from .permissions import IsTouristUser
 @permission_classes([IsAuthenticated, IsTouristUser]) # 인증된 사용자만 접근 가능
 class PlaceItemDetailView(APIView):
     def get(self, request):
-        pk = request.GET.get('pk')  # 또는 request.GET.get('pk')
-        if not pk:
-            return Response({"error": "pk parameter is required as query parameter."}, status=status.HTTP_400_BAD_REQUEST)
+        name = request.GET.get('name')  # 또는 request.GET.get('name')
+        if not name:
+            return Response({"error": "name parameter is required as query parameter."}, status=status.HTTP_400_BAD_REQUEST)
 
         # user_type 확인
         try:
@@ -30,7 +30,7 @@ class PlaceItemDetailView(APIView):
         if user_type != 'tourist':
             return Response({"error": "You do not have permission to access this resource."}, status=status.HTTP_403_FORBIDDEN)
 
-        placeitem = get_object_or_404(PlaceItem, pk=pk)
+        placeitem = get_object_or_404(PlaceItem, name=name)
         serializer = PlaceItemSerializer(placeitem)
         data = serializer.data.copy()
 
@@ -76,7 +76,7 @@ class PlaceItemCreateView(APIView):
             data['coffee'] = None
 
         # 6. 체험 또는 카페가 아니면 parking, sales 필드 비우기
-        if data.get('type') not in ['experience', 'cafe']:
+        if data.get('type') not in ['experience', 'cafe', 'trip']:
             data['parking'] = None
             data['sales'] = None
 
