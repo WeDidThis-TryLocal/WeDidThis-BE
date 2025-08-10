@@ -6,11 +6,17 @@ from .serializers import PlaceItemSerializer
 from django.shortcuts import get_object_or_404
 from .services import get_address_from_place_name, get_coords_from_address, get_tour_info
 from .pictures import get_place_images
+from .experiences import DATA as EXPERIENCES_DATA
 
 # 인증
 from rest_framework.decorators import permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from .permissions import IsTouristUser
+
+
+def get_first_image(name):
+    urls = get_place_images(name) or []
+    return urls[0] if urls else None
 
 
 @permission_classes([IsAuthenticated, IsTouristUser]) # 인증된 사용자만 접근 가능
@@ -27,16 +33,67 @@ class PlaceItemAllView(APIView):
         if user_type != 'tourist':
             return Response({"error": "You do not have permission to access this resource."}, status=status.HTTP_403_FORBIDDEN)
         
-        PlaceItems = PlaceItem.objects.all()
-        serializer = PlaceItemSerializer(PlaceItems, many=True)
-        data = serializer.data.copy()
+        # PlaceItems = PlaceItem.objects.all()
+        # serializer = PlaceItemSerializer(PlaceItems, many=True)
+        # data = serializer.data.copy()
 
-        # 응답에 자동 이미지 URL 추가(첫번째 1개만)
-        for item in data:
-            auto_images_url = get_place_images(item['name'])
-            item['images'] = auto_images_url[:1]  # 첫번째 1개만 추가
+        # # 응답에 자동 이미지 URL 추가(첫번째 1개만)
+        # for item in data:
+        #     auto_images_url = get_place_images(item['name'])
+        #     item['images'] = auto_images_url[:1]  # 첫번째 1개만 추가
 
-        return Response(data, status=status.HTTP_200_OK)
+        # return Response(data, status=status.HTTP_200_OK)
+
+        
+        # 직렬화 후 dict 데이터 사용
+        placeitems = PlaceItem.objects.all()
+        serializer = PlaceItemSerializer(placeitems, many=True)
+        data = serializer.data
+
+        # type 별 데이터 초기화
+        result = {
+            "Shall_we_do_this": [],
+            "Shall_we_eat_this": [],
+            "Shall_we_go_here": [],
+            "How_about_this": []
+        }
+
+        for placeitem in data:
+            name = placeitem.get('name')
+            the_type = placeitem.get('type')
+            first_image = get_first_image(name)
+
+            if the_type == PlaceItem.EXPERIENCE:
+                # experiences.py에서 해당 name의 experiences 찾아서 붙이기
+                exp_info = next((site["experiences"] for site in EXPERIENCES_DATA["sites"] if site["name"] == placeitem.get('name')), [])
+                result["Shall_we_do_this"].append({
+                    "name": name,
+                    "experiences": exp_info,
+                    "image": first_image
+                })
+
+            elif the_type == PlaceItem.CAFE:
+                result["Shall_we_eat_this"].append({
+                    "name": name,
+                    "address": placeitem.get('address'),
+                    "image": first_image
+                })
+
+            elif the_type == PlaceItem.TRIP:
+                result["Shall_we_go_here"].append({
+                    "name": name,
+                    "address": placeitem.get('address'),
+                    "image": first_image
+                })
+
+            elif the_type == PlaceItem.FESTIVAL:
+                result["How_about_this"].append({
+                    "name":name, 
+                    "period": placeitem.get('period'),
+                    "image": first_image
+                })
+
+        return Response(result, status=status.HTTP_200_OK)
 
 
 @permission_classes([IsAuthenticated, IsTouristUser]) # 인증된 사용자만 접근 가능

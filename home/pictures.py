@@ -213,6 +213,24 @@ DATA = {
                 "https://trylocalbucket.s3.ap-northeast-2.amazonaws.com/%EC%95%84%EB%9D%BC%EC%9B%94%EB%93%9C/%EC%95%84%EB%9D%BC%EC%9B%94%EB%93%9C4.jpg",
                 "https://trylocalbucket.s3.ap-northeast-2.amazonaws.com/%EC%95%84%EB%9D%BC%EC%9B%94%EB%93%9C/%EC%95%84%EB%9D%BC%EC%9B%94%EB%93%9C5.jpg"
             ]
+        },
+        {
+            "name": "2025 성주참외&생명문화축제",
+            "links": [
+                "https://trylocalbucket.s3.ap-northeast-2.amazonaws.com/2025+%EC%84%B1%EC%A3%BC%EC%B0%B8%EC%99%B8%26%EC%83%9D%EB%AA%85%EB%AC%B8%ED%99%94%EC%B6%95%EC%A0%9C/%EC%B0%B8%EC%99%B8%EC%B6%95%EC%A0%9C1.jpg",
+                "https://trylocalbucket.s3.ap-northeast-2.amazonaws.com/2025+%EC%84%B1%EC%A3%BC%EC%B0%B8%EC%99%B8%26%EC%83%9D%EB%AA%85%EB%AC%B8%ED%99%94%EC%B6%95%EC%A0%9C/%EC%B0%B8%EC%99%B8%EC%B6%95%EC%A0%9C2.jpg",
+                "https://trylocalbucket.s3.ap-northeast-2.amazonaws.com/2025+%EC%84%B1%EC%A3%BC%EC%B0%B8%EC%99%B8%26%EC%83%9D%EB%AA%85%EB%AC%B8%ED%99%94%EC%B6%95%EC%A0%9C/%EC%B0%B8%EC%99%B8%EC%B6%95%EC%A0%9C3.jpg",
+                "https://trylocalbucket.s3.ap-northeast-2.amazonaws.com/2025+%EC%84%B1%EC%A3%BC%EC%B0%B8%EC%99%B8%26%EC%83%9D%EB%AA%85%EB%AC%B8%ED%99%94%EC%B6%95%EC%A0%9C/%EC%B0%B8%EC%99%B8%EC%B6%95%EC%A0%9C4.jpg"
+            ]
+        },
+        {
+            "name": "메뚜기축제",
+            "links": [
+                "https://trylocalbucket.s3.ap-northeast-2.amazonaws.com/%EB%A9%94%EB%9A%9C%EA%B8%B0%EC%B6%95%EC%A0%9C/%EB%A9%94%EB%9A%9C%EA%B8%B0%EC%B6%95%EC%A0%9C1.jpg",
+                "https://trylocalbucket.s3.ap-northeast-2.amazonaws.com/%EB%A9%94%EB%9A%9C%EA%B8%B0%EC%B6%95%EC%A0%9C/%EB%A9%94%EB%9A%9C%EA%B8%B0%EC%B6%95%EC%A0%9C2.jpg",
+                "https://trylocalbucket.s3.ap-northeast-2.amazonaws.com/%EB%A9%94%EB%9A%9C%EA%B8%B0%EC%B6%95%EC%A0%9C/%EB%A9%94%EB%9A%9C%EA%B8%B0%EC%B6%95%EC%A0%9C3.jpg",
+                "https://trylocalbucket.s3.ap-northeast-2.amazonaws.com/%EB%A9%94%EB%9A%9C%EA%B8%B0%EC%B6%95%EC%A0%9C/%EB%A9%94%EB%9A%9C%EA%B8%B0%EC%B6%95%EC%A0%9C4.jpg"
+            ]
         }
     ]
 }
