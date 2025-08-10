@@ -5,11 +5,38 @@ from .models import PlaceItem, PlaceImage
 from .serializers import PlaceItemSerializer
 from django.shortcuts import get_object_or_404
 from .services import get_address_from_place_name, get_coords_from_address, get_tour_info
+from .pictures import get_place_images
 
 # 인증
 from rest_framework.decorators import permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from .permissions import IsTouristUser
+
+
+@permission_classes([IsAuthenticated, IsTouristUser]) # 인증된 사용자만 접근 가능
+class PlaceItemAllView(APIView):
+    def get(self, request):
+        # user_type 확인
+        try:
+            user_type = request.user.profile.user_type
+        except AttributeError:
+            return Response({"error": "User profile or user_type not found."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # (필요 시 user_type에 따라 다른 처리 가능)
+        # 예를 들어, user_type == 0(관람객) 인 경우에만 진행하고 싶다면
+        if user_type != 'tourist':
+            return Response({"error": "You do not have permission to access this resource."}, status=status.HTTP_403_FORBIDDEN)
+        
+        PlaceItems = PlaceItem.objects.all()
+        serializer = PlaceItemSerializer(PlaceItems, many=True)
+        data = serializer.data.copy()
+
+        # 응답에 자동 이미지 URL 추가(첫번째 1개만)
+        for item in data:
+            auto_images_url = get_place_images(item['name'])
+            item['images'] = auto_images_url[:1]  # 첫번째 1개만 추가
+
+        return Response(data, status=status.HTTP_200_OK)
 
 
 @permission_classes([IsAuthenticated, IsTouristUser]) # 인증된 사용자만 접근 가능

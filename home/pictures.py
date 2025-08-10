@@ -1,6 +1,12 @@
 DATA = {
     "sites": [
         {
+            "name": "성밖숲",
+            "links": [
+                "http://tong.visitkorea.or.kr/cms2/website/04/3391404.JPG",
+            ]
+        },
+        {
             "name": "사우당 종택",
             "links": [
                 "https://trylocalbucket.s3.ap-northeast-2.amazonaws.com/%EC%82%AC%EC%9A%B0%EB%8B%B9+%EC%A2%85%ED%83%9D/%EC%82%AC%EC%9A%B0%EB%8B%B9%EC%A2%85%ED%83%9D1.jpg",
@@ -48,6 +54,12 @@ DATA = {
                 "https://trylocalbucket.s3.ap-northeast-2.amazonaws.com/%EC%84%B8%EC%A2%85%EB%8C%80%EC%99%95%EC%9E%90%ED%83%9C%EC%8B%A4/%EC%84%B8%EC%A2%85%EB%8C%80%EC%99%95%EC%9E%90%ED%83%9C%EC%8B%A43.jpg",
                 "https://trylocalbucket.s3.ap-northeast-2.amazonaws.com/%EC%84%B8%EC%A2%85%EB%8C%80%EC%99%95%EC%9E%90%ED%83%9C%EC%8B%A4/%EC%84%B8%EC%A2%85%EB%8C%80%EC%99%95%EC%9E%90%ED%83%9C%EC%8B%A44.jpg",
                 "https://trylocalbucket.s3.ap-northeast-2.amazonaws.com/%EC%84%B8%EC%A2%85%EB%8C%80%EC%99%95%EC%9E%90%ED%83%9C%EC%8B%A4/%EC%84%B8%EC%A2%85%EB%8C%80%EC%99%95%EC%9E%90%ED%83%9C%EC%8B%A45.jpg"
+            ]
+        },
+        {
+            "name": "한개마을",
+            "links": [
+                "http://tong.visitkorea.or.kr/cms2/website/60/1138560.jpg"
             ]
         },
         {
@@ -121,6 +133,22 @@ DATA = {
             ]
         },
         {
+            "name": "성주호",
+            "links": [
+                "https://trylocalbucket.s3.ap-northeast-2.amazonaws.com/%EC%84%B1%EC%A3%BC%ED%98%B8/%EC%84%B1%EC%A3%BC%ED%98%B81.jpg",
+                "https://trylocalbucket.s3.ap-northeast-2.amazonaws.com/%EC%84%B1%EC%A3%BC%ED%98%B8/%EC%84%B1%EC%A3%BC%ED%98%B82.jpg",
+                "https://trylocalbucket.s3.ap-northeast-2.amazonaws.com/%EC%84%B1%EC%A3%BC%ED%98%B8/%EC%84%B1%EC%A3%BC%ED%98%B83.jpg",
+                "https://trylocalbucket.s3.ap-northeast-2.amazonaws.com/%EC%84%B1%EC%A3%BC%ED%98%B8/%EC%84%B1%EC%A3%BC%ED%98%B84.jpg",
+                "https://trylocalbucket.s3.ap-northeast-2.amazonaws.com/%EC%84%B1%EC%A3%BC%ED%98%B8/%EC%84%B1%EC%A3%BC%ED%98%B85.jpg"
+            ]
+        },
+        {
+            "name": "가야산",
+            "links": [
+                "http://tong.visitkorea.or.kr/cms2/website/43/2620343.jpg"
+            ]
+        },
+        {
             "name": "포천계곡",
             "links": [
                 "https://trylocalbucket.s3.ap-northeast-2.amazonaws.com/%ED%8F%AC%EC%B2%9C%EA%B3%84%EA%B3%A1/%ED%8F%AC%EC%B2%9C%EA%B3%84%EA%B3%A11.jpg",
@@ -138,6 +166,12 @@ DATA = {
                 "https://trylocalbucket.s3.ap-northeast-2.amazonaws.com/%EB%AC%B4%ED%9D%98%EA%B5%AC%EA%B3%A1/%EB%AC%B4%ED%9D%98%EA%B5%AC%EA%B3%A13.jpg",
                 "https://trylocalbucket.s3.ap-northeast-2.amazonaws.com/%EB%AC%B4%ED%9D%98%EA%B5%AC%EA%B3%A1/%EB%AC%B4%ED%9D%98%EA%B5%AC%EA%B3%A14.jpg",
                 "https://trylocalbucket.s3.ap-northeast-2.amazonaws.com/%EB%AC%B4%ED%9D%98%EA%B5%AC%EA%B3%A1/%EB%AC%B4%ED%9D%98%EA%B5%AC%EA%B3%A15.jpg"
+            ]
+        },
+        {
+            "name": "뒷미지수변공원",
+            "links": [
+                "http://tong.visitkorea.or.kr/cms2/website/85/2760985.jpg"
             ]
         },
         {
