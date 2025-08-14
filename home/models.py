@@ -32,7 +32,7 @@ class PlaceItem(models.Model):
 
     # 체험, 카페 공통 필드
     parking = models.CharField('주차', max_length=50, blank=True, null=True)
-    sales = models.CharField('할인', max_length=50, blank=True, null=True)
+    sales = models.CharField('할인', max_length=255, blank=True, null=True)
 
     # 체험 전용 필드
     toilet = models.CharField('화장실', max_length=50, blank=True, null=True)

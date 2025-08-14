@@ -1,6 +1,20 @@
 DATA = {
     "sites": [
         {
+            "name": "다미떡카페",
+            "links": [
+                "https://trylocalbucket.s3.ap-northeast-2.amazonaws.com/%EB%8B%A4%EB%AF%B8%EB%96%A1%EC%B9%B4%ED%8E%98/KakaoTalk_20250814_201911321.jpg",
+                "https://trylocalbucket.s3.ap-northeast-2.amazonaws.com/%EB%8B%A4%EB%AF%B8%EB%96%A1%EC%B9%B4%ED%8E%98/KakaoTalk_20250814_201911321_01.jpg",
+                "https://trylocalbucket.s3.ap-northeast-2.amazonaws.com/%EB%8B%A4%EB%AF%B8%EB%96%A1%EC%B9%B4%ED%8E%98/KakaoTalk_20250809_174650223.jpg",
+                "https://trylocalbucket.s3.ap-northeast-2.amazonaws.com/%EB%8B%A4%EB%AF%B8%EB%96%A1%EC%B9%B4%ED%8E%98/KakaoTalk_20250809_174650223_05.jpg",
+                "https://trylocalbucket.s3.ap-northeast-2.amazonaws.com/%EB%8B%A4%EB%AF%B8%EB%96%A1%EC%B9%B4%ED%8E%98/KakaoTalk_20250809_174650223_04.jpg",
+                "https://trylocalbucket.s3.ap-northeast-2.amazonaws.com/%EB%8B%A4%EB%AF%B8%EB%96%A1%EC%B9%B4%ED%8E%98/KakaoTalk_20250809_174650223_03.jpg",
+                "https://trylocalbucket.s3.ap-northeast-2.amazonaws.com/%EB%8B%A4%EB%AF%B8%EB%96%A1%EC%B9%B4%ED%8E%98/KakaoTalk_20250809_174650223_02.jpg",
+                "https://trylocalbucket.s3.ap-northeast-2.amazonaws.com/%EB%8B%A4%EB%AF%B8%EB%96%A1%EC%B9%B4%ED%8E%98/KakaoTalk_20250809_174650223_01.jpg",
+                "https://trylocalbucket.s3.ap-northeast-2.amazonaws.com/%EB%8B%A4%EB%AF%B8%EB%96%A1%EC%B9%B4%ED%8E%98/%EB%96%A1+%EC%9D%B4%EB%AF%B8%EC%A7%80.png",
+            ]
+        },
+        {
             "name": "성밖숲",
             "links": [
                 "http://tong.visitkorea.or.kr/cms2/website/04/3391404.JPG",
