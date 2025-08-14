@@ -39,6 +39,7 @@ class PlaceItem(models.Model):
 
     # 카페 전용 필드
     coffee = models.CharField('커피 정보', max_length=255, blank=True, null=True)
+    opentime = models.CharField('커피 정보', max_length=255, blank=True, null=True)
 
     created_at = models.DateTimeField('생성일', auto_now_add=True)
     updated_at = models.DateTimeField('수정일', auto_now=True)
