@@ -15,6 +15,24 @@ DATA = {
             ]
         },
         {
+            "name": "카페야",
+            "links": [
+                "https://trylocalbucket.s3.ap-northeast-2.amazonaws.com/%EC%B9%B4%ED%8E%98%EC%95%BC/KakaoTalk_20250810_141257141.jpg",
+                "https://trylocalbucket.s3.ap-northeast-2.amazonaws.com/%EC%B9%B4%ED%8E%98%EC%95%BC/KakaoTalk_20250810_141257141_02.jpg",
+                "https://trylocalbucket.s3.ap-northeast-2.amazonaws.com/%EC%B9%B4%ED%8E%98%EC%95%BC/KakaoTalk_20250810_141257141_04.jpg",
+                "https://trylocalbucket.s3.ap-northeast-2.amazonaws.com/%EC%B9%B4%ED%8E%98%EC%95%BC/KakaoTalk_20250810_141257141_03.jpg",
+                "https://trylocalbucket.s3.ap-northeast-2.amazonaws.com/%EC%B9%B4%ED%8E%98%EC%95%BC/KakaoTalk_20250810_141257141_14.jpg",
+                "https://trylocalbucket.s3.ap-northeast-2.amazonaws.com/%EC%B9%B4%ED%8E%98%EC%95%BC/KakaoTalk_20250810_141257141_05.jpg",
+                "https://trylocalbucket.s3.ap-northeast-2.amazonaws.com/%EC%B9%B4%ED%8E%98%EC%95%BC/KakaoTalk_20250810_141257141_11.jpg",
+                "https://trylocalbucket.s3.ap-northeast-2.amazonaws.com/%EC%B9%B4%ED%8E%98%EC%95%BC/KakaoTalk_20250810_141257141_13.jpg",
+                "https://trylocalbucket.s3.ap-northeast-2.amazonaws.com/%EC%B9%B4%ED%8E%98%EC%95%BC/KakaoTalk_20250810_141257141_12.jpg",
+                "https://trylocalbucket.s3.ap-northeast-2.amazonaws.com/%EC%B9%B4%ED%8E%98%EC%95%BC/KakaoTalk_20250810_141257141_10.jpg",
+                "https://trylocalbucket.s3.ap-northeast-2.amazonaws.com/%EC%B9%B4%ED%8E%98%EC%95%BC/KakaoTalk_20250810_141257141_09.jpg",
+                "https://trylocalbucket.s3.ap-northeast-2.amazonaws.com/%EC%B9%B4%ED%8E%98%EC%95%BC/KakaoTalk_20250810_141257141_08.jpg",
+                "https://trylocalbucket.s3.ap-northeast-2.amazonaws.com/%EC%B9%B4%ED%8E%98%EC%95%BC/KakaoTalk_20250810_141257141_06.jpg"
+            ]
+        },
+        {
             "name": "성밖숲",
             "links": [
                 "http://tong.visitkorea.or.kr/cms2/website/04/3391404.JPG",
