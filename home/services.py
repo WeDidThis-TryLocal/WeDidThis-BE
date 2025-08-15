@@ -44,7 +44,7 @@ def get_tour_info(name):
     # 관광 API: 장소명 -> 사진 리스트
     url = "http://apis.data.go.kr/B551011/PhotoGalleryService1/galleryDetailList1"
     params = {
-        "numOfRows": 10,
+        "numOfRows": 7,
         "pageNo": 1,
         "MobileOS": "IOS",
         "MobileApp": "WeDidThis",
