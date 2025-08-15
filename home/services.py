@@ -61,7 +61,8 @@ def get_tour_info(name):
         items = data.get("response", {}).get("body", {}).get("items", {}).get("item", [])
         image_urls = [item['galWebImageUrl'] for item in items if 'galWebImageUrl' in item]
         if image_urls:
-            return image_urls
+            db_images = get_place_images(name)[1:]
+            return image_urls + db_images
         LOGGER.info("관광공사 API에서 사진을 찾을 수 없습니다.: %s", name)
         return get_place_images(name)
     except Exception as e:
