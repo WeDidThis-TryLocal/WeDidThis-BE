@@ -1,0 +1,82 @@
+from rest_framework import serializers
+from .models import *
+from home.pictures import get_place_images
+
+
+def setting_routes(routes_payload):
+    if not isinstance(routes_payload, list) or len(routes_payload) != 1:
+        raise serializers.ValidationError("routes는 단일 객체를 담은 리스트여야 합니다.")
+    route_map = routes_payload[0]
+
+    try:
+        keys = sorted(int(k) for k in route_map.keys())
+    except Exception:
+        raise serializers.ValidationError("routes[0]의 키는 정수 문자열이어야 합니다.")
+    
+    if keys[0] != 1 or keys != list(range(1, len(keys) + 1)):
+        raise serializers.ValidationError("routes[0]의 키는 1부터 시작하는 연속 정수여야 합니다.")
+    
+    stops = []
+    for i in keys:
+        v = route_map[str(i)]
+        if not isinstance(v, str) or not v.strip():
+            raise serializers.ValidationError(f"{i}번 장소명이 비어있습니다.")
+        stops.append((i, v.strip()))
+    return stops
+
+
+class RouteCreateSerializer(serializers.Serializer):
+    name = serializers.CharField(max_length=100)
+    routes = serializers.ListField(child=serializers.DictField(), min_length=1, max_length=1)
+
+    def create(self, validated_data):
+        stops = setting_routes(validated_data["routes"])
+        route = Route.objects.create(name=validated_data["name"])
+        RouteStop.objects.bulk_create([
+            RouteStop(route=route, order=order, place_name=place)
+            for order, place in stops
+        ])
+        return route
+    
+
+class RouteDetailSerializer(serializers.ModelSerializer):
+    routes = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Route
+        fields = ["id", "name", "routes"]
+
+    def first_image(self, name):
+        try:
+            links = get_place_images(name) or []
+            return links[0] if links else None
+        except Exception:
+            return None
+
+    def get_routes(self, obj):
+        stops = list(obj.stops.all())
+        names = [s.place_name for s in stops]
+
+        qs = PlaceItem.objects.filter(name__in=names).prefetch_related("images")
+        by_name = {p.name: p for p in qs}
+
+        result = []
+        for s in stops:
+            p = by_name.get(s.place_name)
+            if p:
+                result.append({
+                    "order": s.order,
+                    "name": p.name,
+                    "type": p.type,
+                    "address": p.address,
+                    "image_url": self.first_image(p.name),
+                })
+            else:
+                result.append({
+                    "order": s.order,
+                    "name": s.place_name,
+                    "type": None,
+                    "address": None,
+                    "image_url": self.first_image(s.place_name),
+                })
+        return result

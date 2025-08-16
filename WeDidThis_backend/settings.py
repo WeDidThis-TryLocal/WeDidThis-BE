@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     # 생성한 앱
     'accounts',
     'home',
+    'route',
 ]
 
 # accounts 앱에서 내가 설정한 User를 사용하겠다고 설정

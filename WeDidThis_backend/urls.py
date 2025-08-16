@@ -21,4 +21,5 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('accounts/', include('accounts.urls')),  # accounts 앱의 urls.py를 포함
     path('home/', include('home.urls')),  # home 앱의 urls.py를 포함
+    path('route/', include('route.urls')), # route 앱의 urls.py를 포함
 ]

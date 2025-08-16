@@ -32,19 +32,7 @@ class PlaceItemAllView(APIView):
         # 예를 들어, user_type == 0(관람객) 인 경우에만 진행하고 싶다면
         if user_type != 'tourist':
             return Response({"error": "You do not have permission to access this resource."}, status=status.HTTP_403_FORBIDDEN)
-        
-        # PlaceItems = PlaceItem.objects.all()
-        # serializer = PlaceItemSerializer(PlaceItems, many=True)
-        # data = serializer.data.copy()
 
-        # # 응답에 자동 이미지 URL 추가(첫번째 1개만)
-        # for item in data:
-        #     auto_images_url = get_place_images(item['name'])
-        #     item['images'] = auto_images_url[:1]  # 첫번째 1개만 추가
-
-        # return Response(data, status=status.HTTP_200_OK)
-
-        
         # 직렬화 후 dict 데이터 사용
         placeitems = PlaceItem.objects.all()
         serializer = PlaceItemSerializer(placeitems, many=True)
