@@ -44,15 +44,9 @@ class RouteByQuestionnaireView(APIView):
         return Response(
             {
                 "submission_id": submission.id,
-                "answers": {
-                    "q1": submission.q1,
-                    "q2": submission.q2,
-                    "q3": submission.q3
-                },
-                "date": {
-                    "start_date": submission.start_date,
-                    "end_date": submission.end_date,
-                },
+                "user": {"username": submission.user.username},
+                "answers": {"q1": submission.q1, "q2": submission.q2, "q3": submission.q3},
+                "date": {"start_date": submission.start_date, "end_date": submission.end_date},
                 "route": {
                     "id": route_data["id"],
                     "name": route_data["name"],
