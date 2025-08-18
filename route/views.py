@@ -12,6 +12,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from home.permissions import IsTouristUser
 
 
+# 고정 경로 등록
 @permission_classes([AllowAny])  # 인증 없이 접근 가능
 class RouteCollectionView(APIView):
     def post(self, request):
@@ -29,8 +30,38 @@ class RouteCollectionView(APIView):
         )
     
 
+# 설문조사에 따른 고정 경로
 @permission_classes([IsAuthenticated, IsTouristUser])
-class RouteItemView(APIView):
+class RouteByQuestionnaireView(APIView):
+    def post(self, request):
+        s = QuestionnaireSubmissionSerializer(data=request.data, context={"request": request})
+        s.is_valid(raise_exception=True)
+        submission = s.save()
+        route = submission.route
+
+        route_data = RouteDetailSerializer(route, context={"request": request}).data
+
+        return Response(
+            {
+                "submission_id": submission.id,
+                "answers": {
+                    "q1": submission.q1,
+                    "q2": submission.q2,
+                    "q3": submission.q3
+                },
+                "route": {
+                    "id": route_data["id"],
+                    "name": route_data["name"],
+                    "routes": route_data["routes"],
+                }
+            },
+            status=status.HTTP_201_CREATED
+        )
+
+
+# (수정 필요)
+@permission_classes([IsAuthenticated, IsTouristUser])
+class RouteSubmissionDetailView(APIView):
     def get(self, request, route_id):
         # user_type 확인
         try:

@@ -92,7 +92,7 @@ DATA = {
         },
         {
             "name": "선석사",
-            "linkes": [
+            "links": [
                 "https://trylocalbucket.s3.ap-northeast-2.amazonaws.com/%EC%84%A0%EC%84%9D%EC%82%AC/KakaoTalk_20250810_165917097_05.jpg",
                 "https://trylocalbucket.s3.ap-northeast-2.amazonaws.com/%EC%84%A0%EC%84%9D%EC%82%AC/KakaoTalk_20250810_165917097_04.jpg",
                 "https://trylocalbucket.s3.ap-northeast-2.amazonaws.com/%EC%84%A0%EC%84%9D%EC%82%AC/KakaoTalk_20250810_165917097_06.jpg",
@@ -103,7 +103,7 @@ DATA = {
         },
         {
             "name": "남작골문화복지센터",
-            "linkes": [
+            "links": [
                 "https://trylocalbucket.s3.ap-northeast-2.amazonaws.com/%EB%82%A8%EC%9E%91%EA%B3%A8%EB%AC%B8%ED%99%94%EB%B3%B5%EC%A7%80%EC%84%BC%ED%84%B0/KakaoTalk_20250814_214858614_03.jpg",
                 "https://trylocalbucket.s3.ap-northeast-2.amazonaws.com/%EB%82%A8%EC%9E%91%EA%B3%A8%EB%AC%B8%ED%99%94%EB%B3%B5%EC%A7%80%EC%84%BC%ED%84%B0/KakaoTalk_20250814_214858614_02.jpg",
                 "https://trylocalbucket.s3.ap-northeast-2.amazonaws.com/%EB%82%A8%EC%9E%91%EA%B3%A8%EB%AC%B8%ED%99%94%EB%B3%B5%EC%A7%80%EC%84%BC%ED%84%B0/KakaoTalk_20250814_214858614_01.jpg",

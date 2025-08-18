@@ -1,5 +1,6 @@
 from django.db import models
-from home.models import PlaceItem, PlaceImage
+from home.models import PlaceItem
+from accounts.models import User
 
 
 class Route(models.Model):
@@ -26,3 +27,23 @@ class RouteStop(models.Model):
 
     def __str__(self):
         return f"[Route {self.route_id}] {self.order}. {self.place_name}"
+    
+
+class RouteDecisionMap(models.Model):
+    q1 = models.PositiveSmallIntegerField()
+    q2 = models.PositiveSmallIntegerField(null=True, blank=True)
+    q3 = models.PositiveSmallIntegerField(null=True, blank=True)
+    route = models.ForeignKey(Route, on_delete=models.CASCADE, related_name="decision_rules")
+
+    class Meta:
+        unique_together = ("q1", "q2", "q3")
+
+
+class QuestionnaireSubmission(models.Model):
+    user = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL, related_name="route_submissions")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    q1 = models.PositiveSmallIntegerField()
+    q2 = models.PositiveSmallIntegerField(null=True, blank=True)
+    q3 = models.PositiveSmallIntegerField(null=True, blank=True)
+    route = models.ForeignKey(Route, on_delete=models.PROTECT, related_name="submissions")
