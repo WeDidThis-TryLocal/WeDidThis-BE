@@ -87,13 +87,16 @@ class QuestionnaireSubmissionSerializer(serializers.Serializer):
     q2 = serializers.IntegerField(required=False, allow_null=True)
     q3 = serializers.IntegerField(required=False, allow_null=True)
 
+    start_date = serializers.DateField(required=True, input_formats=["%Y-%m-%d"])
+    end_date   = serializers.DateField(required=True, input_formats=["%Y-%m-%d"])
+
     def validate(self, attrs):
         q1 = attrs.get("q1")
         q2 = attrs.get("q2")
         q3 = attrs.get("q3")
 
-        start_date = models.DateField()
-        end_date   = models.DateField()
+        sd = attrs.get("start_date")
+        ed = attrs.get("end_date")
 
         if q1 == 1 and q2 is None:
             raise serializers.ValidationError("q1=1 인 경우 q2는 필수입니다.")
