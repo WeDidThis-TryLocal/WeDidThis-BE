@@ -49,6 +49,10 @@ class RouteByQuestionnaireView(APIView):
                     "q2": submission.q2,
                     "q3": submission.q3
                 },
+                "date": {
+                    "start_date": submission.start_date,
+                    "end_date": submission.end_date,
+                },
                 "route": {
                     "id": route_data["id"],
                     "name": route_data["name"],

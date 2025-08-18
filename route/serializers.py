@@ -92,10 +92,17 @@ class QuestionnaireSubmissionSerializer(serializers.Serializer):
         q2 = attrs.get("q2")
         q3 = attrs.get("q3")
 
+        start_date = models.DateField()
+        end_date   = models.DateField()
+
         if q1 == 1 and q2 is None:
             raise serializers.ValidationError("q1=1 인 경우 q2는 필수입니다.")
         if q1 == 1 and q2 == 1 and q3 is None:
             raise serializers.ValidationError("q1=1 & q2=1 인 경우 q3는 필수입니다.")
+        
+        sd, ed = attrs.get("start_date"), attrs.get("end_date")
+        if ed < sd:
+            raise serializers.ValidationError("도착날짜(end_date)는 출발날짜(start_date)보다 빠를 수 없습니다.")
         
         try:
             rule = RouteDecisionMap.objects.get(q1=q1, q2=q2, q3=q3)
