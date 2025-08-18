@@ -20,3 +20,4 @@ class RouteStopAdmin(admin.ModelAdmin):
 
 admin.site.register(Route, RouteAdmin)
 admin.site.register(RouteStop, RouteStopAdmin)
+admin.site.register(RouteDecisionMap)
