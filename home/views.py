@@ -80,6 +80,9 @@ class PlaceItemAllView(APIView):
                     "period": placeitem.get('period'),
                     "image": first_image
                 })
+        
+        for key in result.keys():
+            result[key] = sorted(result[key], key = lambda x: x["name"])
 
         return Response(result, status=status.HTTP_200_OK)
 
