@@ -19,19 +19,19 @@ def get_first_image(name):
     return urls[0] if urls else None
 
 
-@permission_classes([IsAuthenticated, IsTouristUser]) # 인증된 사용자만 접근 가능
+@permission_classes([IsAuthenticated]) # 인증된 사용자만 접근 가능
 class PlaceItemAllView(APIView):
     def get(self, request):
-        # user_type 확인
-        try:
-            user_type = request.user.profile.user_type
-        except AttributeError:
-            return Response({"error": "User profile or user_type not found."}, status=status.HTTP_400_BAD_REQUEST)
+        # # user_type 확인
+        # try:
+        #     user_type = request.user.profile.user_type
+        # except AttributeError:
+        #     return Response({"error": "User profile or user_type not found."}, status=status.HTTP_400_BAD_REQUEST)
         
-        # (필요 시 user_type에 따라 다른 처리 가능)
-        # 예를 들어, user_type == 0(관람객) 인 경우에만 진행하고 싶다면
-        if user_type != 'tourist':
-            return Response({"error": "You do not have permission to access this resource."}, status=status.HTTP_403_FORBIDDEN)
+        # # (필요 시 user_type에 따라 다른 처리 가능)
+        # # 예를 들어, user_type == 0(관람객) 인 경우에만 진행하고 싶다면
+        # if user_type != 'tourist':
+        #     return Response({"error": "You do not have permission to access this resource."}, status=status.HTTP_403_FORBIDDEN)
 
         # 직렬화 후 dict 데이터 사용
         placeitems = PlaceItem.objects.all()
