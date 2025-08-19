@@ -48,7 +48,7 @@ class QuestionnaireSubmission(models.Model):
     q3 = models.PositiveSmallIntegerField(null=True, blank=True)
     start_date = models.DateField()
     end_date   = models.DateField()
-    route = models.ForeignKey(Route, on_delete=models.PROTECT, related_name="submissions")
+    route = models.ForeignKey(Route, null=True, blank=True, on_delete=models.PROTECT, related_name="submissions")
 
     def __str__(self):
         return f"Submission {self.id} (route={self.route_id})"

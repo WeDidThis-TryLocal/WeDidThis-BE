@@ -39,7 +39,10 @@ class RouteByQuestionnaireView(APIView):
         submission = s.save()
         route = submission.route
 
-        route_data = RouteDetailSerializer(route, context={"request": request}).data
+        if route is None:
+            route_data = {}
+        else:
+            route_data = RouteDetailSerializer(route, context={"request": request}).data
 
         return Response(
             {
@@ -47,11 +50,7 @@ class RouteByQuestionnaireView(APIView):
                 "user": {"username": submission.user.user_name},
                 "answers": {"q1": submission.q1, "q2": submission.q2, "q3": submission.q3},
                 "date": {"start_date": submission.start_date, "end_date": submission.end_date},
-                "route": {
-                    "id": route_data["id"],
-                    "name": route_data["name"],
-                    "routes": route_data["routes"],
-                }
+                "route": route_data,
             },
             status=status.HTTP_201_CREATED
         )
