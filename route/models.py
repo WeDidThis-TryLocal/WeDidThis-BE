@@ -52,3 +52,35 @@ class QuestionnaireSubmission(models.Model):
 
     def __str__(self):
         return f"Submission {self.id} (route={self.route_id})"
+    
+
+class TravelPlan(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="travel_plans")
+    origin_address = models.CharField(max_length=255)
+    origin_latitude = models.DecimalField(max_digits=15, decimal_places=10, null=True, blank=True)
+    origin_longitude = models.DecimalField(max_digits=15, decimal_places=10, null=True, blank=True)
+
+    lodging_address = models.CharField(max_length=255, null=True, blank=True)
+    lodging_latitude = models.DecimalField(max_digits=15, decimal_places=10, null=True, blank=True)
+    lodging_longitude = models.DecimalField(max_digits=15, decimal_places=10, null=True, blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"TravelPlan {self.id} ({'overnight' if self.lodging_address else 'daytrip'})"
+    
+
+class TravelPlanStop(models.Model):
+    plan = models.ForeignKey(TravelPlan, related_name="stops", on_delete=models.CASCADE)
+    order = models.PositiveIntegerField()
+    place = models.ForeignKey(PlaceItem, related_name="plan_stops", on_delete=models.PROTECT)
+
+    class Meta:
+        unique_together = ("plan", "order")
+        ordering = ["order"]
+
+    def __str__(self):
+        return f"[Plan {self.plan_id}] {self.order}. {self.place.name}"

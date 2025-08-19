@@ -1,6 +1,8 @@
 from rest_framework import serializers
 from .models import *
 from home.pictures import get_place_images
+from home.models import PlaceItem
+from home.services import get_coords_from_address
 
 
 def setting_routes(routes_payload):
@@ -122,3 +124,94 @@ class QuestionnaireSubmissionSerializer(serializers.Serializer):
             **validated_data
         )
         return submission
+    
+
+class TravelPlanCreateSerializer(serializers.Serializer):
+    origin_address = serializers.CharField(max_length=255)
+    places = serializers.ListField(child=serializers.CharField(max_length=100), allow_empty=False)
+    lodging_address = serializers.CharField(max_length=255, required=False, allow_blank=True, allow_null=True)
+
+    def resolve_places(self, names):
+        qs = PlaceItem.objects.filter(name__in=names)
+        found = {p.name: p for p in qs}
+        missing = [nm for nm in names if nm not in found]
+        if missing:
+            raise serializers.ValidationError({"places": f"존재하지 않는 장소명: {', '.join(missing)}"})
+        return [found[nm] for nm in names]
+    
+    def create(self, validated_data):
+        request = self.context.get("request")
+        if not request or not getattr(request.user, "is_authenticated", False):
+            raise serializers.ValidationError("로그인 사용자만 설정할 수 있습니다.")
+        
+        user = request.user
+
+        origin_address = validated_data["origin_address"].strip()
+        places_names = [nm.strip() for nm in validated_data["places"]]
+        lodging_address = validated_data.get("lodging_address")
+        lodging_address = lodging_address.strip() if lodging_address else None
+
+        o_lat, o_lon = get_coords_from_address(origin_address)
+        l_lat, l_lon = (None, None)
+        if lodging_address:
+            l_lat, l_lon = get_coords_from_address(lodging_address)
+
+        places = self.resolve_places(places_names)
+
+        plan = TravelPlan.objects.create(
+            user=user,
+            origin_address=origin_address,
+            origin_latitude=o_lat,
+            origin_longitude=o_lon,
+            lodging_address=lodging_address or None,
+            lodging_latitude=l_lat,
+            lodging_longitude=l_lon,
+        )
+
+        TravelPlanStop.objects.bulk_create([
+            TravelPlanStop(plan=plan, order=i + 1, place=p)
+            for i, p in enumerate(places)
+        ])
+
+        return plan
+    
+
+class TravelPlanStopOutSerializer(serializers.ModelSerializer):
+    place_id = serializers.IntegerField(source="place.id")
+    name = serializers.CharField(source="place.name")
+    type = serializers.CharField(source="place.type")
+    type_label = serializers.SerializerMethodField()
+    address = serializers.CharField(source="place.address")
+    latitude = serializers.DecimalField(source="place.latitude", max_digits=15, decimal_places=10)
+    longitude = serializers.DecimalField(source="place.longitude", max_digits=15, decimal_places=10)
+
+    class Meta:
+        model = TravelPlanStop
+        fields = ["order", "place_id", "name", "type", "type_label", "address", "latitude", "longitude"]
+
+    def get_type_label(self, obj):
+        return obj.place.get_type_display()
+    
+
+class TravelPlanDetailSerializer(serializers.ModelSerializer):
+    stops = TravelPlanStopOutSerializer(many=True, read_only=True)
+    user_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = TravelPlan
+        fields = [
+            "id",
+            "user_name",
+            "origin_address", "origin_latitude", "origin_longitude",
+            "lodging_address", "lodging_latitude", "lodging_longitude",
+            "stops",
+            "created_at"
+        ]
+
+    def get_user_name(self, obj):
+        u = obj.user
+        for attr in ("user_name", "username", "email"):
+            val = getattr(u, attr, None)
+            if val:
+                return val
+        return str(u.pk)

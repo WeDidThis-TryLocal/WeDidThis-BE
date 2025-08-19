@@ -92,7 +92,7 @@ class RouteByQuestionnaireView(APIView):
         )
 
 
-# 직접 경로 설정 - 장소 선택
+# 직접 경로 설정 - 장소 리스트
 @permission_classes([IsAuthenticated, IsTouristUser])
 class AllPlacesSimpleView(APIView):
     def get(self, request):
@@ -108,6 +108,20 @@ class AllPlacesSimpleView(APIView):
                 "image": get_first_image(p.name)
             })
         return Response(result, status=status.HTTP_200_OK)
+    
+
+# 직접 경로 설정 - 정보 저장
+@permission_classes([IsAuthenticated, IsTouristUser])
+class TravelPlanCreateView(APIView):
+    def post(self, request):
+        ser = TravelPlanCreateSerializer(data=request.data, context={"request": request})
+        ser.is_valid(raise_exception=True)
+        plan = ser.save()
+
+        detail = TravelPlanDetailSerializer(plan).data
+        detail["message"] = "저장완료"
+
+        return Response(detail, status=status.HTTP_201_CREATED)
 
 
 # (수정 필요)

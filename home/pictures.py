@@ -247,7 +247,6 @@ DATA = {
                 "http://tong.visitkorea.or.kr/cms2/website/60/1138560.jpg",
                 "https://trylocalbucket.s3.ap-northeast-2.amazonaws.com/%ED%95%9C%EA%B0%9C%EB%A7%88%EC%9D%84/KakaoTalk_20250810_164434804.jpg",
                 "https://trylocalbucket.s3.ap-northeast-2.amazonaws.com/%ED%95%9C%EA%B0%9C%EB%A7%88%EC%9D%84/KakaoTalk_20250810_164434804_01.jpg",
-                "https://trylocalbucket.s3.ap-northeast-2.amazonaws.com/%ED%95%9C%EA%B0%9C%EB%A7%88%EC%9D%84/KakaoTalk_20250810_164553861_02.jpg"
                 "https://trylocalbucket.s3.ap-northeast-2.amazonaws.com/%ED%95%9C%EA%B0%9C%EB%A7%88%EC%9D%84/KakaoTalk_20250810_164434804_02.jpg",
                 "https://trylocalbucket.s3.ap-northeast-2.amazonaws.com/%ED%95%9C%EA%B0%9C%EB%A7%88%EC%9D%84/KakaoTalk_20250810_164434804_05.jpg",
                 "https://trylocalbucket.s3.ap-northeast-2.amazonaws.com/%ED%95%9C%EA%B0%9C%EB%A7%88%EC%9D%84/KakaoTalk_20250810_164434804_08.jpg",
