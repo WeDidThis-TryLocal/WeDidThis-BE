@@ -63,7 +63,7 @@ class RouteByQuestionnaireView(APIView):
 @permission_classes([IsAuthenticated, IsTouristUser])
 class AllPlacesSimpleView(APIView):
     def get(self, request):
-        qs = PlaceItem.objects.all().order_by(Lower("name"))
+        qs = PlaceItem.objects.exclude(type=PlaceItem.FESTIVAL).order_by(Lower("name"))
 
         result = []
         for p in qs:
