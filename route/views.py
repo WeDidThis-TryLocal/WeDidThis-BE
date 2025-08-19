@@ -14,6 +14,8 @@ from rest_framework.decorators import permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from home.permissions import IsTouristUser
 
+TYPE_LABEL_MAP = dict(PlaceItem.TYPE_CHOICES)
+
 
 # 고정 경로 등록
 @permission_classes([AllowAny])  # 인증 없이 접근 가능
@@ -46,6 +48,10 @@ class RouteByQuestionnaireView(APIView):
             route_data = {}
         else:
             route_data = RouteDetailSerializer(route, context={"request": request}).data
+
+            for item in route_data.get("routes", []):
+                code = item.get("type")
+                item["type_label"] = TYPE_LABEL_MAP.get(code)
 
         return Response(
             {
