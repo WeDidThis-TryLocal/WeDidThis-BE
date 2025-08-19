@@ -15,6 +15,19 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from home.permissions import IsTouristUser
 
 TYPE_LABEL_MAP = dict(PlaceItem.TYPE_CHOICES)
+REST_CODE = PlaceItem.REST
+
+
+def inject_type_label(item):
+    code = item.get("type")
+    type_label = TYPE_LABEL_MAP.get(code)
+
+    recorded = {}
+    for k, v in item.items():
+        recorded[k] = v
+        if k == "type":
+            recorded["type_label"] = type_label
+    return recorded
 
 
 # 고정 경로 등록
@@ -49,9 +62,23 @@ class RouteByQuestionnaireView(APIView):
         else:
             route_data = RouteDetailSerializer(route, context={"request": request}).data
 
-            for item in route_data.get("routes", []):
-                code = item.get("type")
-                item["type_label"] = TYPE_LABEL_MAP.get(code)
+            if submission.start_date != submission.end_date:
+                routes = route_data.get("routes", [])
+                rest_idx = next((i for i, it in enumerate(routes) if it.get("type") == REST_CODE), None)
+
+                if rest_idx is not None:
+                    day1 = routes[:rest_idx + 1] # 숙소 포함
+                    day2 = routes[rest_idx + 1:] # 숙소 이후
+                else:
+                    day1 = routes
+                    day2 = []
+
+                route_data["routes"] = {
+                    "day1": [inject_type_label(it) for it in day1],
+                    "day2": [inject_type_label(it) for it in day2],
+                }
+            else:
+                route_data["routes"] = [inject_type_label(it) for it in route_data.get("routes", [])]
 
         return Response(
             {
