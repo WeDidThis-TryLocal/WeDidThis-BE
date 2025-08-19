@@ -3,9 +3,12 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.db import transaction
 from django.shortcuts import get_object_or_404
+from django.db.models.functions import Lower
 
 from .models import Route
 from .serializers import *
+from home.models import PlaceItem
+from home.views import get_first_image
 
 from rest_framework.decorators import permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -30,7 +33,7 @@ class RouteCollectionView(APIView):
         )
     
 
-# 설문조사에 따른 고정 경로
+# 설문조사에 따른 경로
 @permission_classes([IsAuthenticated, IsTouristUser])
 class RouteByQuestionnaireView(APIView):
     def post(self, request):
@@ -54,6 +57,24 @@ class RouteByQuestionnaireView(APIView):
             },
             status=status.HTTP_201_CREATED
         )
+
+
+# 직접 경로 설정 - 장소 선택
+@permission_classes([IsAuthenticated, IsTouristUser])
+class AllPlacesSimpleView(APIView):
+    def get(self, request):
+        qs = PlaceItem.objects.all().order_by(Lower("name"))
+
+        result = []
+        for p in qs:
+            result.append({
+                "name": p.name,
+                "type": p.type,
+                "type_label": p.get_type_display(),
+                "description": p.description,
+                "image": get_first_image(p.name)
+            })
+        return Response(result, status=status.HTTP_200_OK)
 
 
 # (수정 필요)
