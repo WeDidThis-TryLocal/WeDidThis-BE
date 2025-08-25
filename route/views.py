@@ -124,6 +124,9 @@ class TravelPlanCreateView(APIView):
         return Response(detail, status=status.HTTP_201_CREATED)
 
 
+
+
+
 # (수정 필요)
 @permission_classes([IsAuthenticated, IsTouristUser])
 class RouteSubmissionDetailView(APIView):

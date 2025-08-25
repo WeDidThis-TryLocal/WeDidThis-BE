@@ -131,6 +131,9 @@ class TravelPlanCreateSerializer(serializers.Serializer):
     places = serializers.ListField(child=serializers.CharField(max_length=100), allow_empty=False)
     lodging_address = serializers.CharField(max_length=255, required=False, allow_blank=True, allow_null=True)
 
+    start_date = serializers.DateField(input_formats=["%Y-%m-%d"])
+    end_date   = serializers.DateField(input_formats=["%Y-%m-%d"])
+
     def resolve_places(self, names):
         qs = PlaceItem.objects.filter(name__in=names)
         found = {p.name: p for p in qs}
@@ -138,6 +141,15 @@ class TravelPlanCreateSerializer(serializers.Serializer):
         if missing:
             raise serializers.ValidationError({"places": f"존재하지 않는 장소명: {', '.join(missing)}"})
         return [found[nm] for nm in names]
+    
+
+    # 날짜 검증 추가
+    def validate(self, attrs):
+        sd, ed = attrs.get("start_date"), attrs.get("end_date")
+        if ed and sd and ed < sd:
+            raise serializers.ValidationError("도착 날짜(end_date)는 출발 날짜(start_date)보다 빠를 수 없습니다.")
+        return attrs
+
     
     def create(self, validated_data):
         request = self.context.get("request")
@@ -166,6 +178,8 @@ class TravelPlanCreateSerializer(serializers.Serializer):
             lodging_address=lodging_address or None,
             lodging_latitude=l_lat,
             lodging_longitude=l_lon,
+            start_date=validated_data["start_date"],
+            end_date=validated_data["end_date"]
         )
 
         TravelPlanStop.objects.bulk_create([
@@ -204,6 +218,7 @@ class TravelPlanDetailSerializer(serializers.ModelSerializer):
             "user_name",
             "origin_address", "origin_latitude", "origin_longitude",
             "lodging_address", "lodging_latitude", "lodging_longitude",
+            "start_date", "end_date",
             "stops",
             "created_at"
         ]

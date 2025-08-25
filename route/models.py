@@ -64,13 +64,16 @@ class TravelPlan(models.Model):
     lodging_latitude = models.DecimalField(max_digits=15, decimal_places=10, null=True, blank=True)
     lodging_longitude = models.DecimalField(max_digits=15, decimal_places=10, null=True, blank=True)
 
+    start_date = models.DateField(null=True, blank=True)
+    end_date   = models.DateField(null=True, blank=True)
+
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         ordering = ["-created_at"]
 
     def __str__(self):
-        return f"TravelPlan {self.id} ({'overnight' if self.lodging_address else 'daytrip'})"
+        return f"TravelPlan {self.id} {self.start_date}~{self.end_date} ({'overnight' if self.lodging_address else 'daytrip'})"
     
 
 class TravelPlanStop(models.Model):
