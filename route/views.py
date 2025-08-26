@@ -30,6 +30,18 @@ def inject_type_label(item):
     return recorded
 
 
+def attach_latlon(items):
+    names = [it.get("name") for it in items if it.get("name")]
+    by_name = {p.name: p for p in PlaceItem.objects.filter(name__in=names)}
+    out = []
+    for it in items:
+        p = by_name.get(it.get("name"))
+        lat = float(p.latitude) if (p and p.latitude is not None) else None
+        lon = float(p.longitude) if (p and p.longitude is not None) else None
+        out.append({**it, "latitude": lat, "longitude": lon})
+    return out
+
+
 # 고정 경로 등록
 @permission_classes([AllowAny])  # 인증 없이 접근 가능
 class RouteCollectionView(APIView):
@@ -61,6 +73,8 @@ class RouteByQuestionnaireView(APIView):
             route_data = {}
         else:
             route_data = RouteDetailSerializer(route, context={"request": request}).data
+
+            routes = attach_latlon(route_data.get("routes", []))
 
             if submission.start_date != submission.end_date:
                 routes = route_data.get("routes", [])
