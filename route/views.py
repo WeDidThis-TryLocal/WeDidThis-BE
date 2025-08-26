@@ -35,7 +35,7 @@ def attach_latlon(items):
     by_name = {p.name: p for p in PlaceItem.objects.filter(name__in=names)}
     out = []
     for it in items:
-        p = by_name.get(it.get("name"))
+        p = by_name.get(it.get("name")).strip()
         lat = float(p.latitude) if (p and p.latitude is not None) else None
         lon = float(p.longitude) if (p and p.longitude is not None) else None
         out.append({**it, "latitude": lat, "longitude": lon})
@@ -77,7 +77,7 @@ class RouteByQuestionnaireView(APIView):
             routes = attach_latlon(route_data.get("routes", []))
 
             if submission.start_date != submission.end_date:
-                routes = route_data.get("routes", [])
+                # routes = route_data.get("routes", [])
                 rest_idx = next((i for i, it in enumerate(routes) if it.get("type") == REST_CODE), None)
 
                 if rest_idx is not None:
