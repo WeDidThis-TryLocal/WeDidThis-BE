@@ -35,7 +35,7 @@ def attach_latlon(items):
     by_name = {p.name: p for p in PlaceItem.objects.filter(name__in=names)}
     out = []
     for it in items:
-        p = by_name.get(it.get("name")).strip()
+        p = by_name.get(it.get("name"))
         lat = float(p.latitude) if (p and p.latitude is not None) else None
         lon = float(p.longitude) if (p and p.longitude is not None) else None
         out.append({**it, "latitude": lat, "longitude": lon})
