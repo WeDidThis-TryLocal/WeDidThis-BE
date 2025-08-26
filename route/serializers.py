@@ -65,12 +65,16 @@ class RouteDetailSerializer(serializers.ModelSerializer):
         result = []
         for s in stops:
             p = by_name.get(s.place_name)
+            lat = float(p.latitude) if p.latitude is not None else None
+            lon = float(p.longitude) if p.longitude is not None else None
             if p:
                 result.append({
                     "order": s.order,
                     "name": p.name,
                     "type": p.type,
                     "address": p.address,
+                    "latitude": lat,
+                    "longitude": lon,
                     "image_url": self.first_image(p.name),
                 })
             else:
@@ -79,6 +83,8 @@ class RouteDetailSerializer(serializers.ModelSerializer):
                     "name": s.place_name,
                     "type": None,
                     "address": None,
+                    "latitude": None,
+                    "longitude": None,
                     "image_url": self.first_image(s.place_name),
                 })
         return result
