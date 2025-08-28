@@ -315,6 +315,7 @@ GPT_SYSTEM_PROMPT = """
     - 입력으로 주어진 place만 사용하세요. **새로운 장소를 만들거나 이름을 바꾸지 마세요.**
     - 각 place의 비좌표 필드(name, type, type_label, address, image_url)는 **그대로 보존**하세요.
     - 좌표 키는 **latitude, longitude** 를 사용합니다.
+    - 장소는 한 번 방문시 다시는 방문하지 않습니다. 무조건 한번씩만 출력하세요.
     5) 순번 부여:
     - 각 day(또는 단일 routes) 안에서 방문지 객체마다 "order"를 1부터 오름차순으로 부여하세요.
     6) 출력 포맷(STRICT JSON):
