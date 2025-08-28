@@ -27,6 +27,14 @@ def setting_routes(routes_payload):
     return stops
 
 
+def first_image(name):
+    try:
+        links = get_place_images(name) or []
+        return links[0] if links else None
+    except Exception:
+        return None
+
+
 class RouteCreateSerializer(serializers.Serializer):
     name = serializers.CharField(max_length=100)
     routes = serializers.ListField(child=serializers.DictField(), min_length=1, max_length=1)
@@ -236,3 +244,78 @@ class TravelPlanDetailSerializer(serializers.ModelSerializer):
             if val:
                 return val
         return str(u.pk)
+    
+
+class SubmissionRouteBuildSerializer(serializers.Serializer):
+    origin_address = serializers.CharField(max_length=255)
+    places = serializers.ListField(child=serializers.CharField(max_length=100), allow_empty=False)
+    lodging_address = serializers.CharField(max_length=255, required=False, allow_blank=True, allow_null=True)
+
+    start_date = serializers.DateField(required=False, input_formats=["%Y-%m-%d"])
+    end_date = serializers.DateField(required=False, input_formats=["%Y-%m-%d"])
+
+    def validate(self, attrs):
+        submission: QuestionnaireSubmission = self.context["submission"]
+        q1, q2, q3 = submission.q1, submission.q2, submission.q3
+
+        if q1 != 2 or q3 is not None or q2 not in (1, 2):
+            raise serializers.ValidationError("이 설문 제출에 대해서는 경로 생성을 할 수 없습니다.")
+        
+        sd = attrs.get("start_date") or submission.start_date
+        ed = attrs.get("end_date") or submission.end_date
+        if ed < sd:
+            raise serializers.ValidationError("도착날짜(end_date)는 출발날짜(start_date)보다 빠를 수 없습니다.")
+        attrs["start_date"], attrs["end_date"] = sd, ed
+
+        lodging_address = attrs.get("lodging_address")
+        if q2 == 2 and not (lodging_address and lodging_address.strip()):
+            raise serializers.ValidationError("1박 2일 여행인 경우 숙박지 주소는 필수입니다.")
+        
+        return attrs
+    
+    def resolve_places(self, names):
+        qs = PlaceItem.objects.filter(name__in=names)
+        found = {p.name: p for p in qs}
+        missing = [nm for nm in names if nm not in found]
+        if missing:
+            raise serializers.ValidationError({"places": f"존재하지 않는 장소명: {', '.join(missing)}"})
+        return [found[nm] for nm in names]
+    
+    def build_places_payload(self, names):
+        items = []
+        for p in self.resolve_places([nm.strip() for nm in names]):
+            items.append({
+                "name": p.name,
+                "type": p.type,
+                "type_label": p.get_type_display(),
+                "address": p.address,
+                "latitude": float(p.latitude) if p.latitude is not None else None,
+                "longitude": float(p.longitude) if p.longitude is not None else None,
+                "image_url": first_image(p.name)
+            })
+        return items
+    
+
+# ---- GPT Prompt / Payload Builder ----
+GPT_SYSTEM_PROMPT = """
+    You are a routing planner. Given an origin coordinate and a list of places (name, type, type_lavel, latitude, longitude),
+    compute a visiting order that:
+    - Starts at origin (if provided) and eventually returns to origin (assume round trip when ordering),
+    - Greedily goes to the nearest next place by geographic distance,
+    - If a lodging (type == "rest") exists or overnight is true, make Day 1 end at the lodging, and Day 2 continue from the lodging.
+
+    Rules:
+    - Use only the given places; do NOT invent or rename any place.
+    - Preserve non-conordinate fields for each place (name, type, type_label, address, image_url).
+    - Output STRICT JSON (no commets, no trailling commas).
+    - If overnight is false: output {"routes}: [...]},
+    - If overnight is true: output {"routes": {"day1": [...], "day2}: [...]}
+"""
+
+
+def build_gpt_payload(*, origin, places, overnight):
+    return {
+        "origin": origin,
+        "overnight": overnight,
+        "places": places
+    }
