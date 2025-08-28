@@ -19,7 +19,6 @@ from home.permissions import IsTouristUser
 
 TYPE_LABEL_MAP = dict(PlaceItem.TYPE_CHOICES)
 REST_CODE = PlaceItem.REST
-OPENAI_API_KEY = getattr(settings, 'OPENAI_API_KEY', None)
 
 
 def inject_type_label(item):
@@ -108,7 +107,7 @@ def ensure_lodging_included(items, lodging_address, lat, lon):
 
 
 def call_gpt(system_prompt, payload):
-    client = OpenAI()
+    client = OpenAI(api_key=settings.OPENAI_API_KEY)
     resp = client.chat.completions.create(
         model="gpt-4.1",
         temperature=0.0,
