@@ -88,6 +88,25 @@ def save_gpt_route_as_route(routes_out, route_name="나의 여정"):
     return route
 
 
+def ensure_lodging_included(items, lodging_address, lat, lon):
+    if not lodging_address:
+        return items
+    
+    exists = next((x for x in items if x.get("type") == REST_CODE or x.get("name") == lodging_address), None)
+    if exists:
+        return items
+    
+    lodging = {
+        "name": lodging_address,
+        "type": REST_CODE,
+        "address": lodging_address,
+        "image_url": [],
+        "latitude": float(lat) if lat is not None else None,
+        "longitude": float(lon) if lon is not None else None,
+    }
+    return items + [lodging]
+
+
 def call_gpt(system_prompt, payload):
     client = OpenAI()
     resp = client.chat.completions.create(
@@ -242,17 +261,6 @@ class SubmissionBuildRouteView(APIView):
         if not plan:
             return Response({"error": "연결된 여행 계획이 없습니다."}, status=status.HTTP_400_BAD_REQUEST)
 
-        # # 시리얼라이저 검증
-        # ser = SubmissionRouteBuildSerializer(data=request.data, context={"request": request, "submission": submission})
-        # ser.is_valid(raise_exception=True)
-        # v = ser.validated_data
-
-        # # GPT 입력 준비
-        # origin = None
-        # places_payload = ser.build_places_payload(v["places"])
-        # overnight = (submission.q2 == 2)
-        # payload = build_gpt_payload(origin=origin, places=places_payload, overnight=overnight)
-
         # DB에서 GPT 입력 구성
         items = []
         for st in plan.stops.select_related("place"):
@@ -272,6 +280,13 @@ class SubmissionBuildRouteView(APIView):
             origin = {"latitude": float(plan.origin_latitude), "longitude": float(plan.origin_longitude)}
 
         overnight = bool(plan.lodging_address) or (plan.start_date != plan.end_date)
+        if overnight:
+            items = ensure_lodging_included(
+                items,
+                lodging_address=plan.lodging_address,
+                lat=float(plan.lodging_latitude) if plan.lodging_latitude is not None else None,
+                lon=float(plan.lodging_longitude) if plan.lodging_longitude is not None else None,
+            )
         payload = build_gpt_payload(origin=origin, places=items, overnight=overnight)
 
         # GPT 호출

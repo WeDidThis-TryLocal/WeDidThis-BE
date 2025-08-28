@@ -298,18 +298,23 @@ class SubmissionRouteBuildSerializer(serializers.Serializer):
 
 # ---- GPT Prompt / Payload Builder ----
 GPT_SYSTEM_PROMPT = """
-    You are a routing planner. Given an origin coordinate and a list of places (name, type, type_lavel, latitude, longitude),
-    compute a visiting order that:
-    - Starts at origin (if provided) and eventually returns to origin (assume round trip when ordering),
-    - Greedily goes to the nearest next place by geographic distance,
-    - If a lodging (type == "rest") exists or overnight is true, make Day 1 end at the lodging, and Day 2 continue from the lodging.
+    You are a routing planner. Given an origin coordinate and a list of places (each with name, type, type_label, address, image_url, latitude, longitude),
+    produce a visiting order that:
+    - Starts at origin (if provided) and returns to origin at the end (assume round trip).
+    - Greedily goes to the nearest next place by geographic distance.
+    - If overnight is true and a lodging exists (type == "rest"), you MUST:
+    - include the lodging exactly once in the route,
+    - make Day 1 end at the lodging,
+    - make Day 2 start from the lodging and continue visiting remaining places,
+    - keep the remaining ordering rule (nearest-next) for both Day 1 and Day 2.
 
     Rules:
     - Use only the given places; do NOT invent or rename any place.
-    - Preserve non-conordinate fields for each place (name, type, type_label, address, image_url).
-    - Output STRICT JSON (no commets, no trailling commas).
-    - If overnight is false: output {"routes}: [...]},
-    - If overnight is true: output {"routes": {"day1": [...], "day2}: [...]}
+    - Preserve all non-coordinate fields for each place (name, type, type_label, address, image_url).
+    - Coordinates keys must be "latitude" and "longitude" (not lat/lon).
+    - Output STRICT JSON (no comments, no trailing commas).
+    - If overnight is false: output {"routes":[...]}.
+    - If overnight is true: output {"routes":{"day1":[...],"day2":[...]}}.
 """
 
 
