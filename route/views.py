@@ -109,7 +109,7 @@ def ensure_lodging_included(items, lodging_address, lat, lon):
 def call_gpt(system_prompt, payload):
     client = OpenAI(api_key=settings.OPENAI_API_KEY)
     resp = client.chat.completions.create(
-        model="gpt-4.1",
+        model="gpt-5",
         temperature=0.0,
         messages=[
             {"role": "system", "content": system_prompt},
@@ -288,15 +288,8 @@ class SubmissionBuildRouteView(APIView):
             )
         payload = build_gpt_payload(origin=origin, places=items, overnight=overnight)
 
-        # GPT 호출
-        # try:
         gpt_result = call_gpt(GPT_SYSTEM_PROMPT, payload)
         computed = gpt_result.get("routes")
-        # except Exception:
-        #     if overnight:
-        #         computed = {"day1": items, "day2": []}
-        #     else:
-        #         computed = items
 
         # 응답 포맷 정리
         if isinstance(computed, dict) and "day1" in computed:
