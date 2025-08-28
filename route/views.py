@@ -109,8 +109,7 @@ def ensure_lodging_included(items, lodging_address, lat, lon):
 def call_gpt(system_prompt, payload):
     client = OpenAI(api_key=settings.OPENAI_API_KEY)
     resp = client.chat.completions.create(
-        model="gpt-4.1",
-        temperature=1.0,
+        model="gpt-5",
         messages=[
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": json.dumps(payload, ensure_ascii=False, separators=(',', ':'))}
