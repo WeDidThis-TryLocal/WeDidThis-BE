@@ -192,6 +192,19 @@ class TravelPlanCreateView(APIView):
         ser.is_valid(raise_exception=True)
         plan = ser.save()
 
+        submission_id = request.GET.get("submission_id") or request.data.get("submission_id")
+        if submission_id:
+            try:
+                sub = QuestionnaireSubmission.objects.get(id=int(submission_id), user=request.user)
+                if sub.travel_plan_id:
+                    return Response({"error": "이미 여행 계획이 연결된 설문조사입니다."}, status=status.HTTP_400_BAD_REQUEST)
+                sub.travel_plan = plan
+                sub.start_date = plan.start_date
+                sub.end_date = plan.end_date
+                sub.save(update_fields=["travel_plan", "start_date", "end_date"])
+            except (QuestionnaireSubmission.DoesNotExist, ValueError):
+                return Response({"error": "해당 submission_id에 대한 설문조사 결과가 없습니다."}, status=status.HTTP_404_NOT_FOUND)
+
         detail = TravelPlanDetailSerializer(plan).data
         detail["message"] = "저장완료"
 
