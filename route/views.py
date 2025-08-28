@@ -96,7 +96,7 @@ def ensure_lodging_included(items, lodging_address, lat, lon):
         return items
     
     lodging = {
-        "name": lodging_address,
+        "name": "오늘의 휴식처",
         "type": REST_CODE,
         "address": lodging_address,
         "image_url": [],
@@ -154,7 +154,6 @@ class RouteByQuestionnaireView(APIView):
             routes = attach_latlon(route_data.get("routes", []))
 
             if submission.start_date != submission.end_date:
-                # routes = route_data.get("routes", [])
                 rest_idx = next((i for i, it in enumerate(routes) if it.get("type") == REST_CODE), None)
 
                 if rest_idx is not None:
