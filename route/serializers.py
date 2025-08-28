@@ -299,19 +299,20 @@ class SubmissionRouteBuildSerializer(serializers.Serializer):
 # ---- GPT Prompt / Payload Builder ----
 GPT_SYSTEM_PROMPT = """
     You are a routing planner. Given an origin coordinate and a list of places (each with name, type, type_label, address, image_url, latitude, longitude),
-    produce a visiting order that:
+    produce an order that:
     - Starts at origin (if provided) and returns to origin at the end (assume round trip).
     - Greedily goes to the nearest next place by geographic distance.
-    - If overnight is true and a lodging exists (type == "rest"), you MUST:
-    - include the lodging exactly once in the route,
+    - If overnight is true and a lodging exists (type == "rest"):
+    - include the lodging exactly once,
     - make Day 1 end at the lodging,
-    - make Day 2 start from the lodging and continue visiting remaining places,
-    - keep the remaining ordering rule (nearest-next) for both Day 1 and Day 2.
+    - make Day 2 start at the lodging and visit remaining places,
+    - Day 2 MUST NOT be empty if there are at least 2 non-lodging places in total.
+    - Don't put all non-lodging places into Day 1; balance across days when possible.
 
     Rules:
     - Use only the given places; do NOT invent or rename any place.
     - Preserve all non-coordinate fields for each place (name, type, type_label, address, image_url).
-    - Coordinates keys must be "latitude" and "longitude" (not lat/lon).
+    - Coordinate keys must be "latitude" and "longitude".
     - Output STRICT JSON (no comments, no trailing commas).
     - If overnight is false: output {"routes":[...]}.
     - If overnight is true: output {"routes":{"day1":[...],"day2":[...]}}.
