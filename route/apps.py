@@ -6,4 +6,4 @@ class RouteConfig(AppConfig):
     name = 'route'
 
     def ready(self):
-        from . import signals
+        import route.signals
