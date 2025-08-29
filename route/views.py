@@ -4,6 +4,8 @@ from rest_framework import status
 from django.db import transaction
 from django.shortcuts import get_object_or_404
 from django.db.models.functions import Lower
+from django.db.models.signals import post_delete
+from django.dispatch import receiver
 from openai import OpenAI
 import json
 
@@ -117,6 +119,26 @@ def call_gpt(system_prompt, payload):
         response_format={"type": "json_object"}
     )
     return json.loads(resp.choices[0].message.content)
+
+
+PROTECTED_ROUTE_IDS = {1, 2, 3, 4, 5}
+UNPROTECTED_ROUTE_NAME = "나의 여정"
+@receiver(post_delete, sender=QuestionnaireSubmission)
+def delete_orphaned_route(sender, instance, **kwargs):
+    route = instance.route
+    if not route:
+        return
+    
+    if route.submissions.exists():
+        return
+    
+    if route.id in PROTECTED_ROUTE_IDS:
+        return
+    
+    if route.name != UNPROTECTED_ROUTE_NAME:
+        return
+    
+    route.delete()
 
 
 # 고정 경로 등록
@@ -344,3 +366,32 @@ class RouteSubmissionDetailView(APIView):
             "name": data["name"],
             "routes": data["routes"],  # order 붙은 리스트
         })
+    
+
+# 삭제
+@permission_classes([IsAuthenticated, IsTouristUser])
+class TravelPlanDeleteView(APIView):
+    def delete(self, request):
+        submission_id = request.GET.get("submission_id")
+        if not submission_id:
+            return Response(
+                {"error": "submission_id 쿼리 파라미터가 필요합니다."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        submission = get_object_or_404(QuestionnaireSubmission.objects.select_related("travel_plan"), id=submission_id, user=request.user)
+        if not submission.travel_plan_id:
+            return Response({"error": "연결된 여행 계획이 없습니다."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        deleted_submission_id = submission.id
+        deleted_plan_id = submission.travel_plan_id
+        submission.travel_plan.delete()
+
+        return Response(
+            {
+                "message": "삭제완료",
+                "deleted_submission_id": deleted_submission_id,
+                "deleted_travel_plan_id": deleted_plan_id
+            },
+            status=status.HTTP_200_OK
+        )

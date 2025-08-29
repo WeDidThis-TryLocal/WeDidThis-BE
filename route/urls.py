@@ -13,4 +13,6 @@ urlpatterns = [
     path("save", TravelPlanCreateView.as_view(), name='save-place'),
     # 직접 경로 설정 - GPT 경로 생성
     path("build", SubmissionBuildRouteView.as_view(), name="build_route_by_gpt"),
+    # 경로 삭제
+    path("delete", TravelPlanDeleteView.as_view(), name="delete_travel_plan"),
 ]
