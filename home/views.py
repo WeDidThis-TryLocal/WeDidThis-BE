@@ -35,7 +35,7 @@ class PlaceItemAllView(APIView):
 
         # 직렬화 후 dict 데이터 사용
         placeitems = PlaceItem.objects.all()
-        serializer = PlaceItemSerializer(placeitems, many=True)
+        serializer = PlaceItemSerializer(placeitems, many=True, context={"request": request})
         data = serializer.data
 
         # type 별 데이터 초기화
@@ -106,7 +106,7 @@ class PlaceItemDetailView(APIView):
             return Response({"error": "You do not have permission to access this resource."}, status=status.HTTP_403_FORBIDDEN)
 
         placeitem = get_object_or_404(PlaceItem, name=name)
-        serializer = PlaceItemSerializer(placeitem)
+        serializer = PlaceItemSerializer(placeitem, context={"request": request})
         data = serializer.data.copy()
 
         # 자동으로 관광공사 API에서 사진 가져오기
@@ -162,6 +162,7 @@ class PlaceItemCreateView(APIView):
                 PlaceImage.objects.create(place=placeitem, image_url=url)
 
             return Response(serializer.data, status=status.HTTP_201_CREATED)
+            # return Response(PlaceItemSerializer(placeitem, context={"request": request}).data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -172,14 +173,14 @@ class TogglePlaceFavoriteView(APIView):
         if not place_name:
             return Response({"error": "name parameter is required as query parameter."}, status=status.HTTP_400_BAD_REQUEST)
         
-        place = get_object_or_404(PlaceItem,nmae=place_name)
-        fav, createed = PlaceFavorite.objects.get_or_create(user=request.user, place=place)
+        place = get_object_or_404(PlaceItem,name=place_name)
+        fav, created = PlaceFavorite.objects.get_or_create(user=request.user, place=place)
 
-        if createed:
-            return Response({"favoried": True, "place": place.name}, status=status.HTTP_201_CREATED)
+        if created:
+            return Response({"favorited": True, "place": place.name}, status=status.HTTP_201_CREATED)
         else:
             fav.delete()
-            return Response({"favoried": False, "place": place.name}, status=status.HTTP_200_OK)
+            return Response({"favorited": False, "place": place.name}, status=status.HTTP_200_OK)
         
     def delete(self, request):
         place_name = request.GET.get('name')
@@ -187,5 +188,5 @@ class TogglePlaceFavoriteView(APIView):
             return Response({"error": "name parameter is required as query parameter."}, status=status.HTTP_400_BAD_REQUEST)
         
         place = get_object_or_404(PlaceItem,name=place_name)
-        PlaceFavorite.objects.filter(User=request.user, place=place).delete()
-        return Response({"favoried": False, "place": place.name}, status=status.HTTP_200_OK)
+        PlaceFavorite.objects.filter(user=request.user, place=place).delete()
+        return Response({"favorited": False, "place": place.name}, status=status.HTTP_200_OK)

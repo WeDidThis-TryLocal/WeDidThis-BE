@@ -37,9 +37,9 @@ class PlaceItemSerializer(serializers.ModelSerializer):
             'is_favorite',
         ]
 
-    def get_attribute(self, obj):
-        request = self.context.get('request')
-        user = getattr(request, 'user', None)
-        if not user or not user.is_authenticated:
-            return False
-        return PlaceFavorite.objects.filter(user=user, place=obj).exists()
+    def get_is_favorite(self, obj):
+            request = self.context.get("request")
+            user = getattr(request, "user", None)
+            if not user or not user.is_authenticated:
+                return False
+            return PlaceFavorite.objects.filter(user=user, place=obj).exists()
