@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     'accounts',
     'home',
     'route',
+    'mypage',
 ]
 
 # accounts 앱에서 내가 설정한 User를 사용하겠다고 설정
