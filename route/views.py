@@ -322,10 +322,10 @@ class SubmissionBuildRouteView(APIView):
         return Response(out, status=status.HTTP_201_CREATED)
 
 
-# (수정 필요)
+# 경로 결과 조회
 @permission_classes([IsAuthenticated, IsTouristUser])
-class RouteSubmissionDetailView(APIView):
-    def get(self, request, route_id):
+class RouteResultbySubmissionView(APIView):
+    def get(self, request):
         # user_type 확인
         try:
             user_type = request.user.profile.user_type
@@ -337,13 +337,51 @@ class RouteSubmissionDetailView(APIView):
         if user_type != 'tourist':
             return Response({"error": "You do not have permission to access this resource."}, status=status.HTTP_403_FORBIDDEN)
         
-        route = get_object_or_404(Route.objects.prefetch_related("stops"), pk=route_id)
-        data = RouteDetailSerializer(route).data
+        submission_id = request.GET.get("submission_id")
+        if not submission_id:
+            return Response({"error": "submission_id 쿼리 파라미터가 필요합니다."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            sid = int(submission_id)
+        except (TypeError, ValueError):
+            return Response({"error": "submission_id는 유효한 정수여야 합니다."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        submission = QuestionnaireSubmission.objects.select_related("route", "user").filter(id=sid).first()
+        if not submission:
+            return Response({"error": "해당 submission_id가 존재하지 않습니다."}, status=status.HTTP_404_NOT_FOUND)
+        if submission.user_id != request.user.id:
+            return Response({"error": "이 경로에 접근할 권한이 없습니다."}, status=status.HTTP_403_FORBIDDEN)
+        
+        route_data = RouteDetailSerializer(submission.route, context={"request": request}).data
+        routes = route_data.get("routes", [])
+
+        # 1일/1박2일 분기 + type_label 삽입
+        if submission.start_date != submission.end_date:
+            rest_idx = next((i for i, it in enumerate(routes) if it.get("type") == REST_CODE), None)
+            if rest_idx is not None:
+                day1 = routes[:rest_idx + 1]  # 숙소 포함
+                day2 = routes[rest_idx + 1:]  # 숙소 이후
+            else:
+                day1, day2 = routes, []
+
+            out_routes = {
+                "day1": [inject_type_label(it) for it in day1],
+                "day2": [inject_type_label(it) for it in day2],
+            }
+        else:
+            out_routes = [inject_type_label(it) for it in routes]
+
         return Response({
-            "route_id": data["id"],
-            "name": data["name"],
-            "routes": data["routes"],  # order 붙은 리스트
-        })
+            "submission_id": submission.id,
+            "user": {"username": getattr(submission.user, "user_name", getattr(submission.user, "username", ""))},
+            "answers": {"q1": submission.q1, "q2": submission.q2, "q3": submission.q3},
+            "date": {"start_date": submission.start_date, "end_date": submission.end_date},
+            "route": {
+                "id": route_data.get("id"),
+                "name": route_data.get("name"),
+                "routes": out_routes
+            }
+        }, status=status.HTTP_200_OK)
     
 
 # 삭제
