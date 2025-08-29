@@ -1,4 +1,5 @@
 from django.db import models
+from accounts.models import User
 
 
 class PlaceItem(models.Model):
@@ -54,3 +55,18 @@ class PlaceImage(models.Model):
 
     def __str__(self):
         return f"{self.place.name} - {self.image_url}"
+    
+
+class PlaceFavorite(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='favorite_places')
+    place = models.ForeignKey(PlaceItem, on_delete=models.CASCADE, related_name='favorited_by')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'place')
+        indexes = [
+            models.Index(fields=['user', 'created_at']),
+        ]
+
+    def __str__(self):
+        return f"{self.user.username} - {self.place.name}"

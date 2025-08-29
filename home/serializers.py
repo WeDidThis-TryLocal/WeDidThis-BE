@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import PlaceItem, PlaceImage
+from .models import *
 
 
 class PlaceImageSerializer(serializers.ModelSerializer):
@@ -33,4 +33,12 @@ class PlaceItemSerializer(serializers.ModelSerializer):
             'created_at',
             'updated_at',
             'images',  # Include related images
+            'is_favorite',
         ]
+
+    def get_attribute(self, obj):
+        request = self.context.get('request')
+        user = getattr(request, 'user', None)
+        if not user or not user.is_authenticated:
+            return False
+        return PlaceFavorite.objects.filter(user=user, place=obj).exists()

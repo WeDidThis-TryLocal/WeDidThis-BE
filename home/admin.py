@@ -1,9 +1,11 @@
 from django.contrib import admin
-from home.models import PlaceItem, PlaceImage
+from home.models import *
+
 
 class PlaceImageInline(admin.TabularInline):
     model = PlaceImage
     extra = 1  # 이미지 추가 입력란 개수
+
 
 class PlaceItemAdmin(admin.ModelAdmin):
     list_display = ('id', 'type', 'name', 'address', 'contact', 'created_at')
@@ -12,9 +14,19 @@ class PlaceItemAdmin(admin.ModelAdmin):
     inlines = [PlaceImageInline]
     readonly_fields = ('created_at', 'updated_at')
 
+
 class PlaceImageAdmin(admin.ModelAdmin):
     list_display = ('id', 'place', 'image_url')
     search_fields = ('place__name', 'image_url')
 
+
+class PlaceFavoriteAdmin(admin.ModelAdmin):
+    list_display = ("id", "user", "place", "created_at")
+    list_select_related = ("user", "place")
+    search_fields = ("user__username", "user__user_name", "place__name")
+    ordering = ("-created_at",)
+
+
 admin.site.register(PlaceItem, PlaceItemAdmin)
 admin.site.register(PlaceImage, PlaceImageAdmin)  # Register PlaceImage model with admin
+admin.site.register(PlaceFavorite, PlaceFavoriteAdmin)

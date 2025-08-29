@@ -1,7 +1,7 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from .models import PlaceItem, PlaceImage
+from .models import *
 from .serializers import PlaceItemSerializer
 from django.shortcuts import get_object_or_404
 from .services import get_address_from_place_name, get_coords_from_address, get_tour_info
@@ -161,9 +161,31 @@ class PlaceItemCreateView(APIView):
             for url in request.data.get('images', []):
                 PlaceImage.objects.create(place=placeitem, image_url=url)
 
-            # 자동으로 관광공사 API에서 사진 가져오기
-            # auto_images_url = get_tour_info(placeitem.name)
-            # for url in auto_images_url:
-            #     PlaceImage.objects.create(place=placeitem, image_url=url)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@permission_classes([IsAuthenticated, IsTouristUser])
+class TogglePlaceFavoriteView(APIView):
+    def post(self, request):
+        place_name = request.GET.get('name')
+        if not place_name:
+            return Response({"error": "name parameter is required as query parameter."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        place = get_object_or_404(PlaceItem,nmae=place_name)
+        fav, createed = PlaceFavorite.objects.get_or_create(user=request.user, place=place)
+
+        if createed:
+            return Response({"favoried": True, "place": place.name}, status=status.HTTP_201_CREATED)
+        else:
+            fav.delete()
+            return Response({"favoried": False, "place": place.name}, status=status.HTTP_200_OK)
+        
+    def delete(self, request):
+        place_name = request.GET.get('name')
+        if not place_name:
+            return Response({"error": "name parameter is required as query parameter."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        place = get_object_or_404(PlaceItem,name=place_name)
+        PlaceFavorite.objects.filter(User=request.user, place=place).delete()
+        return Response({"favoried": False, "place": place.name}, status=status.HTTP_200_OK)
