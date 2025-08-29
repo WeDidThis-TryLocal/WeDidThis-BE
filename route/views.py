@@ -358,18 +358,26 @@ class TravelPlanDeleteView(APIView):
             )
         
         submission = get_object_or_404(QuestionnaireSubmission.objects.select_related("travel_plan"), id=submission_id, user=request.user)
-        if not submission.travel_plan_id:
-            return Response({"error": "연결된 여행 계획이 없습니다."}, status=status.HTTP_400_BAD_REQUEST)
         
         deleted_submission_id = submission.id
         deleted_plan_id = submission.travel_plan_id
-        submission.travel_plan.delete()
-
-        return Response(
-            {
-                "message": "삭제완료",
-                "deleted_submission_id": deleted_submission_id,
-                "deleted_travel_plan_id": deleted_plan_id
-            },
-            status=status.HTTP_200_OK
-        )
+        if submission.travel_plan_id:
+            submission.travel_plan.delete()
+            return Response(
+                {
+                    "message": "삭제완료",
+                    "deleted_submission_id": deleted_submission_id,
+                    "deleted_travel_plan_id": deleted_plan_id
+                },
+                status=status.HTTP_200_OK
+            )
+        else:
+            submission.delete()
+            return Response(
+                {
+                    "message": "삭제완료",
+                    "deleted_submission_id": deleted_submission_id,
+                    "deleted_travel_plan_id": None
+                },
+                status=status.HTTP_200_OK
+            )
