@@ -50,7 +50,7 @@ class QuestionnaireSubmission(models.Model):
     end_date   = models.DateField()
     route = models.ForeignKey(Route, null=True, blank=True, on_delete=models.PROTECT, related_name="submissions")
 
-    travel_plan = models.OneToOneField('TravelPlan', null=True, blank=True, on_delete=models.SET_NULL, related_name="submission")
+    travel_plan = models.OneToOneField('TravelPlan', null=True, blank=True, on_delete=models.CASCADE, related_name="submission")
 
     def __str__(self):
         return f"Submission {self.id} (route={self.route_id})"
