@@ -10,6 +10,7 @@ class PlaceImageSerializer(serializers.ModelSerializer):
 
 class PlaceItemSerializer(serializers.ModelSerializer):
     images = PlaceImageSerializer(many=True, read_only=True)  # Nested serializer for related images
+    is_favorite = serializers.SerializerMethodField()
 
     class Meta:
         model = PlaceItem
