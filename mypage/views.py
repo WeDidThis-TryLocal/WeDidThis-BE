@@ -3,11 +3,15 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.decorators import permission_classes
 from rest_framework.permissions import IsAuthenticated
+from django.db import transaction
 
-from route.models import *
+from .models import *
+from .serializers import *
+from accounts.models import User
 from home.models import *
 from home.permissions import IsTouristUser
 from home.views import get_first_image
+from route.models import *
 
 TYPE_LABEL_MAP = dict(PlaceItem.TYPE_CHOICES)
 
@@ -62,6 +66,49 @@ class LogoutAPIView(APIView):
         res = Response(
             {
                 "message": "로그아웃되었습니다."
+            },
+            status=status.HTTP_202_ACCEPTED
+        )
+        res.delete_cookie("access_token")
+        res.delete_cookie("user_type")
+        return res
+    
+
+# 회원탈퇴
+@permission_classes([IsAuthenticated, IsTouristUser])
+class DeleteAccountView(APIView):
+    def post(self, request):
+        ser = AccountDeletionSerializer(data=request.data)
+        ser.is_valid(raise_exception=True)
+        reason = ser.validated_data.get("reason", "")
+
+        user = request.user
+        with transaction.atomic():
+            # 탈퇴 로그 기록
+            log = AccountDeletionLog.objects.create(
+                user=user,
+                user_id_snapshot=user.id,
+                user_name_snapshot=getattr(user, "user_name", ""),
+                account_id_snapshot=getattr(user, "account_id", ""),
+                reason=reason,
+            )
+
+            # 관련 데이터 삭제
+            TravelPlan.objects.filter(user=user).delete()
+            QuestionnaireSubmission.objects.filter(user=user).delete()
+
+            # 유저 정보 삭제
+            user.delete()
+        
+        res = Response(
+            {
+                "message": "회원탈퇴가 완료되었습니다.",
+                "user": {
+                    "id": log.user_id_snapshot,
+                    "account_id": log.account_id_snapshot,
+                    "user_name": log.user_name_snapshot,
+                },
+                "reason": reason,
             },
             status=status.HTTP_202_ACCEPTED
         )
