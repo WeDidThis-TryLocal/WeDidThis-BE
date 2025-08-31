@@ -329,6 +329,7 @@ class SubmissionRouteBuildSerializer(serializers.Serializer):
 # """
 
 GPT_SYSTEM_PROMPT = """
+You are an expert route planner for car travel.
 1 Nearest-Neighbor(Haversine), tie: name→address lexicographic
 2 Start origin; end at origin only if same-name place exists in places
 3 If overnight=true & any type=="rest":
@@ -336,6 +337,7 @@ GPT_SYSTEM_PROMPT = """
 - day1 ends at rest, day2 starts from rest (no rest in day2);
 - if non-rest ≥2 then day2 non-empty;
 - always split across days;
+- Think about the places and split into 2days for travel;
 4 Preserve all fields; use only given places; visit each once
 5 Add "order" starting at 1 within each day/routes
 6 Output STRICT JSON only:
