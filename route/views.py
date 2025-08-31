@@ -45,6 +45,13 @@ def attach_latlon(items):
     return out
 
 
+def is_overnight(submission):
+    return(
+        (submission.q1 == 1 and submission.q2 == 1 and submission.q3 == 2) or
+        (submission.q1 == 2 and submission.q2 == 2 and submission.q3 is None)
+    )
+
+
 def clean_for_response_list(lst):
     cleaned = []
     for it in lst:
@@ -150,7 +157,6 @@ class RouteByQuestionnaireView(APIView):
             route_data = {}
         else:
             route_data = RouteDetailSerializer(route, context={"request": request}).data
-
             routes = attach_latlon(route_data.get("routes", []))
 
             if submission.start_date != submission.end_date:
@@ -163,12 +169,20 @@ class RouteByQuestionnaireView(APIView):
                     day1 = routes
                     day2 = []
 
-                route_data["routes"] = {
+                routes_out = {
                     "day1": [inject_type_label(it) for it in day1],
                     "day2": [inject_type_label(it) for it in day2],
                 }
             else:
-                route_data["routes"] = [inject_type_label(it) for it in route_data.get("routes", [])]
+                routes_out = [inject_type_label(it) for it in route_data.get("routes", [])]
+
+            route_body = {
+                "id": route_data.get("id"),
+                "name": route_data.get("name") or "나의 여정",
+                "routes": routes_out,
+            }
+
+        payload_key = "route_overnight" if is_overnight(submission) else "route"
 
         return Response(
             {
@@ -176,7 +190,7 @@ class RouteByQuestionnaireView(APIView):
                 "user": {"username": submission.user.user_name},
                 "answers": {"q1": submission.q1, "q2": submission.q2, "q3": submission.q3},
                 "date": {"start_date": submission.start_date, "end_date": submission.end_date},
-                "route": route_data,
+                payload_key: route_body,
             },
             status=status.HTTP_201_CREATED
         )
@@ -306,17 +320,20 @@ class SubmissionBuildRouteView(APIView):
             submission.end_date = plan.end_date
             submission.save(update_fields=["route", "start_date", "end_date"])
 
+        route_body = {
+            "id": saved_route.id,
+            "name": "나의 여정",
+            "routes": routes_out,
+        }
+        payload_key = "route_overnight" if is_overnight(submission) else "route"
+
         # 응답
         out = {
             "submission_id": submission.id,
             "user": {"username": getattr(submission.user, "user_name", getattr(submission.user, "username", ""))},
             "answers": {"q1": submission.q1, "q2": submission.q2, "q3": submission.q3},
             "date": {"start_date": submission.start_date, "end_date": submission.end_date},
-            "route": {
-                "id": saved_route.id,
-                "name": "나의 여정",
-                "routes": routes_out
-            },
+            payload_key: route_body,
             "message": "답변완료"
         }
         return Response(out, status=status.HTTP_201_CREATED)
