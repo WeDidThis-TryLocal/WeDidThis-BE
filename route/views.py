@@ -153,9 +153,9 @@ class RouteByQuestionnaireView(APIView):
         submission = s.save()
         route = submission.route
 
-        if route is None:
-            route_data = {}
-        else:
+        route_body = {}
+
+        if route is not None:
             route_data = RouteDetailSerializer(route, context={"request": request}).data
             routes = attach_latlon(route_data.get("routes", []))
 
