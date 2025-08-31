@@ -51,3 +51,20 @@ class MyFavoriteListView(APIView):
         return Response({
             "results": results
         }, status=status.HTTP_200_OK)
+    
+
+# 로그아웃
+@permission_classes([IsAuthenticated, IsTouristUser])
+class LogoutAPIView(APIView):
+    # 로그아웃
+    def delete(self, request):
+        # 쿠키에 저장된 토큰 삭제 -> 로그아웃
+        res = Response(
+            {
+                "message": "로그아웃되었습니다."
+            },
+            status=status.HTTP_202_ACCEPTED
+        )
+        res.delete_cookie("access_token")
+        res.delete_cookie("user_type")
+        return res
