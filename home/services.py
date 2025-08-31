@@ -41,6 +41,10 @@ def get_coords_from_address(address):
 
 
 def get_tour_info(name):
+    # 특정 장소 DB 사진 반환
+    if name in ["가야산", "뒷미지수변공원"]:
+        return get_place_images(name)
+
     # 관광 API: 장소명 -> 사진 리스트
     url = "http://apis.data.go.kr/B551011/PhotoGalleryService1/galleryDetailList1"
     params = {
