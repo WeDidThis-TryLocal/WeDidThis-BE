@@ -297,54 +297,55 @@ class SubmissionRouteBuildSerializer(serializers.Serializer):
     
 
 # ---- GPT Prompt / Payload Builder ----
-GPT_SYSTEM_PROMPT = """
-    당신은 자동차 이동을 전제로 한 최적(근사)의 방문 순서 설계자입니다. 입력으로 출발지(origin) 좌표와 방문 후보 장소들(places: name, type, type_label, address, image_url, latitude, longitude)을 받습니다. 목표는 다음 규칙을 만족하는 방문 순서를 만들어 **반드시 엄격한 JSON(주석·후행 콤마 금지)** 로 출력하는 것입니다.
-
-    [핵심 규칙]
-    1) 경로 방식: origin에서 위도/경도 거리를 기준으로 가장 가까운 다음 장소로 이동하는 **탐욕적(Nearest-Neighbor)** 방식으로 순서를 정합니다.
-    2) 시작/종료:
-    - 시작: origin 좌표에서 시작합니다.
-    - 종료: 마지막 목적지는 origin입니다. (입력 places 내에 있는 동일 명칭의 장소를 사용하며, 없다면 추가하지 말고 오류 없이 가능한 범위에서 규칙을 준수합니다)
-    3) 숙소(overnight) 처리:
-    - overnight = true 이고 places 내에 type == "rest" (숙소)가 존재하면 **숙소를 정확히 1회 포함**해야 합니다.
-    - **Day 1은 숙소에서 종료**, **Day 2는 숙소를 중심으로 남은 장소들을 계속 같은 규칙(Nearest-Neighbor)으로 방문합니다.
-    - Day 2에는 숙소가 포함되어서는 안됩니다.
-    - 숙소를 제외한 방문해야 할 place가 2개 이상이면 **Day 2는 비어 있으면 안 됩니다.**
-    - 경로 전체를 Day 1에 몰지 말고 무조건 양일로 분배하세요.
-    - 장소는 한 번 방문시 다시는 방문하지 않습니다. 무조건 한번씩만 출력하세요.
-    4) 데이터 보존/무발명:
-    - 입력으로 주어진 place만 사용하세요. **새로운 장소를 만들거나 이름을 바꾸지 마세요.**
-    - 각 place의 비좌표 필드(name, type, type_label, address, image_url)는 **그대로 보존**하세요.
-    - 좌표 키는 **latitude, longitude** 를 사용합니다.
-    5) 순번 부여:
-    - 각 day(또는 단일 routes) 안에서 방문지 객체마다 "order"를 1부터 오름차순으로 부여하세요.
-    6) 출력 포맷(STRICT JSON):
-    - overnight == false  →  {"routes":[ ...place objects... ]}
-    - overnight == true   →  {"routes":{"day1":[ ... ],"day2":[ ... ]}}
-    - JSON 외 텍스트, 주석, 후행 콤마를 절대 포함하지 마세요.
-
-    [추가 지침]
-    - 거리 계산은 위도/경도로 계산하세요.
-    - 출력 직전에 포맷을 한 번 더 점검하여 **유효한 JSON** 만 반환하세요.
-"""
-
 # GPT_SYSTEM_PROMPT = """
-# You are an expert route planner for car travel.
-# 1 Nearest-Neighbor(Haversine), tie: name→address lexicographic
-# 2 Start origin; end at origin only if same-name place exists in places
-# 3 If overnight=true & any type=="rest":
-# - include exactly one rest;
-# - day1 ends at rest, day2 starts from rest (no rest in day2);
-# - if non-rest ≥2 then day2 non-empty;
-# - always split across days;
-# - Think about the places and split into 2days for travel;
-# 4 Preserve all fields; use only given places; visit each once
-# 5 Add "order" starting at 1 within each day/routes
-# 6 Output STRICT JSON only:
-# - no-overnight → {"routes":[...]}
-# - overnight → {"routes":{"day1":[...],"day2":[...]}}
-# 7 Output JSON only (no text/comments)
+#     당신은 자동차 이동을 전제로 한 최적(근사)의 방문 순서 설계자입니다. 입력으로 출발지(origin) 좌표와 방문 후보 장소들(places: name, type, type_label, address, image_url, latitude, longitude)을 받습니다. 목표는 다음 규칙을 만족하는 방문 순서를 만들어 **반드시 엄격한 JSON(주석·후행 콤마 금지)** 로 출력하는 것입니다.
+
+#     [핵심 규칙]
+#     1) 경로 방식: origin에서 위도/경도 거리를 기준으로 가장 가까운 다음 장소로 이동하는 **탐욕적(Nearest-Neighbor)** 방식으로 순서를 정합니다.
+#     2) 시작/종료:
+#     - 시작: origin 좌표에서 시작합니다.
+#     - 종료: 마지막 목적지는 origin입니다. (입력 places 내에 있는 동일 명칭의 장소를 사용하며, 없다면 추가하지 말고 오류 없이 가능한 범위에서 규칙을 준수합니다)
+#     3) 숙소(overnight) 처리:
+#     - overnight = true 이고 places 내에 type == "rest" (숙소)가 존재하면 **숙소를 정확히 1회 포함**해야 합니다.
+#     - **Day 1은 숙소에서 종료**, **Day 2는 숙소를 중심으로 남은 장소들을 계속 같은 규칙(Nearest-Neighbor)으로 방문합니다.
+#     - Day 2에는 숙소가 포함되어서는 안됩니다.
+#     - 숙소를 제외한 방문해야 할 place가 2개 이상이면 **Day 2는 비어 있으면 안 됩니다.**
+#     - 경로 전체를 Day 1에 몰지 말고 무조건 양일로 분배하세요.
+#     - 장소는 한 번 방문시 다시는 방문하지 않습니다. 무조건 한번씩만 출력하세요.
+#     4) 데이터 보존/무발명:
+#     - 입력으로 주어진 place만 사용하세요. **새로운 장소를 만들거나 이름을 바꾸지 마세요.**
+#     - 각 place의 비좌표 필드(name, type, type_label, address, image_url)는 **그대로 보존**하세요.
+#     - 좌표 키는 **latitude, longitude** 를 사용합니다.
+#     5) 순번 부여:
+#     - 각 day(또는 단일 routes) 안에서 방문지 객체마다 "order"를 1부터 오름차순으로 부여하세요.
+#     6) 출력 포맷(STRICT JSON):
+#     - overnight == false  →  {"routes":[ ...place objects... ]}
+#     - overnight == true   →  {"routes":{"day1":[ ... ],"day2":[ ... ]}}
+#     - JSON 외 텍스트, 주석, 후행 콤마를 절대 포함하지 마세요.
+
+#     [추가 지침]
+#     - 거리 계산은 위도/경도로 계산하세요.
+#     - 출력 직전에 포맷을 한 번 더 점검하여 **유효한 JSON** 만 반환하세요.
 # """
+
+GPT_SYSTEM_PROMPT = """
+    You are an expert route planner for car travel.
+    1 Nearest-Neighbor(Haversine), tie: name→address lexicographic
+    2 Start origin; end at origin only if same-name place exists in places
+    3 If overnight=true & any type=="rest":
+    - include exactly one rest;
+    - day1 ends at rest, day2 starts from rest (no rest in day2);
+    - if non-rest ≥2 then day2 non-empty;
+    - always split across days;
+    - Think about the places and split into 2days for travel;
+    4 Preserve all fields; use only given places; visit each once
+    - Think about the latitude and longitude and also think about the type of places to make a travel route
+    5 Add "order" starting at 1 within each day/routes
+    6 Output STRICT JSON only:
+    - no-overnight → {"routes":[...]}
+    - overnight → {"routes":{"day1":[...],"day2":[...]}}
+    7 Output JSON only (no text/comments)
+"""
 
 
 def build_gpt_payload(*, origin, places, overnight):
