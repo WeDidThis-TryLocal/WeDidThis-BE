@@ -103,7 +103,7 @@ class PlaceItemAllView(APIView):
                     "image": first_image
                 })
         
-        for key in result.keys():
+        for key in ("Shall_we_do_this","Shall_we_eat_this","Shall_we_go_here","How_about_this"):
             result[key] = sorted(result[key], key = lambda x: x["name"])
 
         return Response(result, status=status.HTTP_200_OK)
