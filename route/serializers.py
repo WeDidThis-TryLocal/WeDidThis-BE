@@ -4,6 +4,8 @@ from home.pictures import get_place_images
 from home.models import PlaceItem
 from home.services import get_coords_from_address
 
+REST_CODE = PlaceItem.REST
+
 
 def setting_routes(routes_payload):
     if not isinstance(routes_payload, list) or len(routes_payload) != 1:
@@ -73,9 +75,9 @@ class RouteDetailSerializer(serializers.ModelSerializer):
         result = []
         for s in stops:
             p = by_name.get(s.place_name)
-            lat = float(p.latitude) if p.latitude is not None else None
-            lon = float(p.longitude) if p.longitude is not None else None
             if p:
+                lat = float(p.latitude) if p.latitude is not None else None
+                lon = float(p.longitude) if p.longitude is not None else None
                 result.append({
                     "order": s.order,
                     "name": p.name,
@@ -86,10 +88,11 @@ class RouteDetailSerializer(serializers.ModelSerializer):
                     "image_url": self.first_image(p.name),
                 })
             else:
+                fallback_type = REST_CODE if s.place_name == "오늘의 휴식처" else None
                 result.append({
                     "order": s.order,
                     "name": s.place_name,
-                    "type": None,
+                    "type": fallback_type,
                     "address": None,
                     "latitude": None,
                     "longitude": None,

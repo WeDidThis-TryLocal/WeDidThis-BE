@@ -363,7 +363,7 @@ class RouteResultbySubmissionView(APIView):
         except (TypeError, ValueError):
             return Response({"error": "submission_id는 유효한 정수여야 합니다."}, status=status.HTTP_400_BAD_REQUEST)
         
-        submission = QuestionnaireSubmission.objects.select_related("route", "user").filter(id=sid).first()
+        submission = QuestionnaireSubmission.objects.select_related("route", "user", "travel_plan").filter(id=sid).first()
         if not submission:
             return Response({"error": "해당 submission_id가 존재하지 않습니다."}, status=status.HTTP_404_NOT_FOUND)
         if submission.user_id != request.user.id:
@@ -371,6 +371,25 @@ class RouteResultbySubmissionView(APIView):
         
         route_data = RouteDetailSerializer(submission.route, context={"request": request}).data
         routes = route_data.get("routes", [])
+
+        plan = getattr(submission, "travel_plan", None)
+
+        def _fill_rest_from_plan(item):  # ADDED
+            if item.get("name") == "오늘의 휴식처":
+                # type이 비어있으면 숙소로 지정
+                if item.get("type") is None:
+                    item["type"] = REST_CODE
+                # TravelPlan 기반으로 좌표/주소 보강
+                if plan:
+                    if not item.get("address") and plan.lodging_address:
+                        item["address"] = plan.lodging_address
+                    if item.get("latitude") is None and plan.lodging_latitude is not None:
+                        item["latitude"] = float(plan.lodging_latitude)
+                    if item.get("longitude") is None and plan.lodging_longitude is not None:
+                        item["longitude"] = float(plan.lodging_longitude)
+            return item
+
+        routes = [_fill_rest_from_plan(it) for it in routes]
 
         # 1일/1박2일 분기 + type_label 삽입
         if submission.start_date != submission.end_date:
