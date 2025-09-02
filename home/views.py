@@ -13,6 +13,8 @@ from rest_framework.decorators import permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from .permissions import IsTouristUser
 
+from route.models import QuestionnaireSubmission
+
 
 def get_first_image(name):
     urls = get_place_images(name) or []
@@ -38,8 +40,28 @@ class PlaceItemAllView(APIView):
         serializer = PlaceItemSerializer(placeitems, many=True, context={"request": request})
         data = serializer.data
 
+        # 사용자 여행 내역
+        subs = (
+            QuestionnaireSubmission.objects
+            .filter(user=request.user, route__isnull=False)
+            .select_related("route")
+        )
+        latest = subs.order_by("-start_date", "-id").first()
+
+        if latest:
+            my_travel = [{
+                "submission_id": latest.id,
+                "date": {
+                    "start_date": latest.start_date,
+                    "end_date": latest.end_date
+                }
+            }]
+        else:
+            my_travel = []
+
         # type 별 데이터 초기화
         result = {
+            "my_travel": my_travel,
             "Shall_we_do_this": [],
             "Shall_we_eat_this": [],
             "Shall_we_go_here": [],
