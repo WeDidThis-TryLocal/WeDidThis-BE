@@ -374,7 +374,7 @@ class RouteResultbySubmissionView(APIView):
 
         plan = getattr(submission, "travel_plan", None)
 
-        def _fill_rest_from_plan(item):  # ADDED
+        def _fill_rest_from_plan(item):
             if item.get("name") == "오늘의 휴식처":
                 # type이 비어있으면 숙소로 지정
                 if item.get("type") is None:
@@ -407,17 +407,23 @@ class RouteResultbySubmissionView(APIView):
         else:
             out_routes = [inject_type_label(it) for it in routes]
 
-        return Response({
+        route_body = {
+            "id": route_data.get("id"),
+            "name": route_data.get("name"),
+            "routes": out_routes
+        }
+
+        payload_key = "route_overnight" if (submission.start_date != submission.end_date) else "route"
+
+        resp = {
             "submission_id": submission.id,
             "user": {"username": getattr(submission.user, "user_name", getattr(submission.user, "username", ""))},
             "answers": {"q1": submission.q1, "q2": submission.q2, "q3": submission.q3},
             "date": {"start_date": submission.start_date, "end_date": submission.end_date},
-            "route": {
-                "id": route_data.get("id"),
-                "name": route_data.get("name"),
-                "routes": out_routes
-            }
-        }, status=status.HTTP_200_OK)
+        }
+        resp[payload_key] = route_body
+
+        return Response(resp, status=status.HTTP_200_OK)
     
 
 # 삭제
