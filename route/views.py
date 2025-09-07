@@ -272,7 +272,47 @@ class SubmissionBuildRouteView(APIView):
         if not plan:
             return Response({"error": "연결된 여행 계획이 없습니다."}, status=status.HTTP_400_BAD_REQUEST)
 
-        # DB에서 GPT 입력 구성
+        # # DB에서 GPT 입력 구성
+        # items = []
+        # for st in plan.stops.select_related("place"):
+        #     p = st.place
+        #     items.append({
+        #         "order": st.order,
+        #         "name": p.name,
+        #         "type": p.type,
+        #         "address": p.address,
+        #         "image_url": get_first_image(p.name),
+        #         "latitude": float(p.latitude) if p.latitude is not None else None,
+        #         "longitude": float(p.longitude) if p.longitude is not None else None,
+        #     })
+
+        # origin = None
+        # if plan.origin_latitude is not None and plan.origin_longitude is not None:
+        #     origin = {"latitude": float(plan.origin_latitude), "longitude": float(plan.origin_longitude)}
+
+        # overnight = bool(plan.lodging_address) or (plan.start_date != plan.end_date)
+        # if overnight:
+        #     items = ensure_lodging_included(
+        #         items,
+        #         lodging_address=plan.lodging_address,
+        #         lat=float(plan.lodging_latitude) if plan.lodging_latitude is not None else None,
+        #         lon=float(plan.lodging_longitude) if plan.lodging_longitude is not None else None,
+        #     )
+        # payload = build_gpt_payload(origin=origin, places=items, overnight=overnight)
+
+        # gpt_result = call_gpt(GPT_SYSTEM_PROMPT, payload)
+        # computed = gpt_result.get("routes")
+
+        # # 응답 포맷 정리
+        # if isinstance(computed, dict) and "day1" in computed:
+        #     routes_out = {
+        #         "day1": clean_for_response_list(computed["day1"]),
+        #         "day2": clean_for_response_list(computed.get("day2", []))
+        #     }
+        # else:
+        #     routes_out = clean_for_response_list(computed or [])
+
+        # DB에서 입력 구성
         items = []
         for st in plan.stops.select_related("place"):
             p = st.place
@@ -286,31 +326,20 @@ class SubmissionBuildRouteView(APIView):
                 "longitude": float(p.longitude) if p.longitude is not None else None,
             })
 
-        origin = None
-        if plan.origin_latitude is not None and plan.origin_longitude is not None:
-            origin = {"latitude": float(plan.origin_latitude), "longitude": float(plan.origin_longitude)}
+        # 숙소가 있다면 추가
+        if plan.lodging_address:
+            items.append({
+                "order": 0,
+                "name": getattr(plan, "lodging_name", None) or "오늘의 휴식처",
+                "type": "rest",
+                "address": plan.lodging_address,
+                "image_url": None,
+                "latitude": float(plan.lodging_latitude) if plan.lodging_latitude is not None else None,
+                "longitude": float(plan.lodging_longitude) if plan.lodging_longitude is not None else None,
+            })
 
-        overnight = bool(plan.lodging_address) or (plan.start_date != plan.end_date)
-        if overnight:
-            items = ensure_lodging_included(
-                items,
-                lodging_address=plan.lodging_address,
-                lat=float(plan.lodging_latitude) if plan.lodging_latitude is not None else None,
-                lon=float(plan.lodging_longitude) if plan.lodging_longitude is not None else None,
-            )
-        payload = build_gpt_payload(origin=origin, places=items, overnight=overnight)
-
-        gpt_result = call_gpt(GPT_SYSTEM_PROMPT, payload)
-        computed = gpt_result.get("routes")
-
-        # 응답 포맷 정리
-        if isinstance(computed, dict) and "day1" in computed:
-            routes_out = {
-                "day1": clean_for_response_list(computed["day1"]),
-                "day2": clean_for_response_list(computed.get("day2", []))
-            }
-        else:
-            routes_out = clean_for_response_list(computed or [])
+        # 가나다순 정렬
+        routes_out = sorted(items, key=lambda x: x["name"])
 
         # DB 저장
         with transaction.atomic():
