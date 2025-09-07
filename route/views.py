@@ -272,6 +272,19 @@ class SubmissionBuildRouteView(APIView):
         if not plan:
             return Response({"error": "연결된 여행 계획이 없습니다."}, status=status.HTTP_400_BAD_REQUEST)
 
+        # 임시 추가(type_labels)
+        TYPE_LABELS = {
+            "experience": "체험",
+            "cafe": "카페",
+            "restaurant": "식당",
+            "sightseeing": "관광",
+            "shopping": "쇼핑",
+            "park": "공원",
+            "museum": "박물관",
+            "rest": "숙소",
+            "lodging": "숙소",
+        }
+
         # DB에서 GPT 입력 구성
         items = []
         for st in plan.stops.select_related("place"):
@@ -280,6 +293,8 @@ class SubmissionBuildRouteView(APIView):
                 "order": st.order,
                 "name": p.name,
                 "type": p.type,
+                # 임시추가(type_labels)
+                "type_label": TYPE_LABELS.get(p.type),
                 "address": p.address,
                 "image_url": get_first_image(p.name),
                 "latitude": float(p.latitude) if p.latitude is not None else None,
@@ -312,14 +327,13 @@ class SubmissionBuildRouteView(APIView):
         # else:
         #     routes_out = clean_for_response_list(computed or [])
 
-        #---
         # 숙소 이름/라벨 보정
-        # for it in items:
-        #     if it.get("type") in ("rest", "lodging"):
-        #         if not (it.get("name") or "").strip():
-        #             it["name"] = "오늘의 휴식처"
-        #         it["type"] = "rest"  # 통일
-        #         it["type_label"] = TYPE_LABELS["rest"]
+        for it in items:
+            if it.get("type") in ("rest", "lodging"):
+                if not (it.get("name") or "").strip():
+                    it["name"] = "오늘의 휴식처"
+                it["type"] = "rest"  # 통일
+                it["type_label"] = TYPE_LABELS["rest"]
 
         # ---------- 가나다순 정렬 ----------
         items_sorted = sorted(items, key=lambda x: x.get("name") or "")
