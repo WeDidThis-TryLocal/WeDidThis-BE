@@ -272,32 +272,32 @@ class SubmissionBuildRouteView(APIView):
         if not plan:
             return Response({"error": "연결된 여행 계획이 없습니다."}, status=status.HTTP_400_BAD_REQUEST)
 
-        # # DB에서 GPT 입력 구성
-        # items = []
-        # for st in plan.stops.select_related("place"):
-        #     p = st.place
-        #     items.append({
-        #         "order": st.order,
-        #         "name": p.name,
-        #         "type": p.type,
-        #         "address": p.address,
-        #         "image_url": get_first_image(p.name),
-        #         "latitude": float(p.latitude) if p.latitude is not None else None,
-        #         "longitude": float(p.longitude) if p.longitude is not None else None,
-        #     })
+        # DB에서 GPT 입력 구성
+        items = []
+        for st in plan.stops.select_related("place"):
+            p = st.place
+            items.append({
+                "order": st.order,
+                "name": p.name,
+                "type": p.type,
+                "address": p.address,
+                "image_url": get_first_image(p.name),
+                "latitude": float(p.latitude) if p.latitude is not None else None,
+                "longitude": float(p.longitude) if p.longitude is not None else None,
+            })
 
-        # origin = None
-        # if plan.origin_latitude is not None and plan.origin_longitude is not None:
-        #     origin = {"latitude": float(plan.origin_latitude), "longitude": float(plan.origin_longitude)}
+        origin = None
+        if plan.origin_latitude is not None and plan.origin_longitude is not None:
+            origin = {"latitude": float(plan.origin_latitude), "longitude": float(plan.origin_longitude)}
 
-        # overnight = bool(plan.lodging_address) or (plan.start_date != plan.end_date)
-        # if overnight:
-        #     items = ensure_lodging_included(
-        #         items,
-        #         lodging_address=plan.lodging_address,
-        #         lat=float(plan.lodging_latitude) if plan.lodging_latitude is not None else None,
-        #         lon=float(plan.lodging_longitude) if plan.lodging_longitude is not None else None,
-        #     )
+        overnight = bool(plan.lodging_address) or (plan.start_date != plan.end_date)
+        if overnight:
+            items = ensure_lodging_included(
+                items,
+                lodging_address=plan.lodging_address,
+                lat=float(plan.lodging_latitude) if plan.lodging_latitude is not None else None,
+                lon=float(plan.lodging_longitude) if plan.lodging_longitude is not None else None,
+            )
         # payload = build_gpt_payload(origin=origin, places=items, overnight=overnight)
 
         # gpt_result = call_gpt(GPT_SYSTEM_PROMPT, payload)
@@ -312,31 +312,47 @@ class SubmissionBuildRouteView(APIView):
         # else:
         #     routes_out = clean_for_response_list(computed or [])
 
-        # DB에서 입력 구성
-        items = []
-        for st in plan.stops.select_related("place"):
-            p = st.place
-            items.append({
-                "order": st.order,
-                "name": p.name,
-                "type": p.type,
-                "address": p.address,
-                "image_url": get_first_image(p.name),
-                "latitude": float(p.latitude) if p.latitude is not None else None,
-                "longitude": float(p.longitude) if p.longitude is not None else None,
-            })
+        #---
+        # 숙소 이름/라벨 보정
+        # for it in items:
+        #     if it.get("type") in ("rest", "lodging"):
+        #         if not (it.get("name") or "").strip():
+        #             it["name"] = "오늘의 휴식처"
+        #         it["type"] = "rest"  # 통일
+        #         it["type_label"] = TYPE_LABELS["rest"]
 
-        # 숙소가 있다면 추가
-        if plan.lodging_address:
-            items.append({
-                "order": 0,
-                "name": getattr(plan, "lodging_name", None) or "오늘의 휴식처",
-                "type": "rest",
-                "address": plan.lodging_address,
-                "image_url": None,
-                "latitude": float(plan.lodging_latitude) if plan.lodging_latitude is not None else None,
-                "longitude": float(plan.lodging_longitude) if plan.lodging_longitude is not None else None,
-            })
+        # ---------- 가나다순 정렬 ----------
+        items_sorted = sorted(items, key=lambda x: x.get("name") or "")
+
+        # ---------- 포맷: 당일 / 1박2일 ----------
+        has_lodging = any(it.get("type") in ("rest", "lodging") for it in items_sorted)
+        if overnight and has_lodging:
+            # 첫 번째 숙소를 기준으로 day1/day2 분리 (숙소는 day1 마지막에 포함)
+            lodging_idx = next(
+                (i for i, it in enumerate(items_sorted) if it.get("type") in ("rest", "lodging")),
+                len(items_sorted) - 1
+            )
+            day1 = items_sorted[:lodging_idx + 1]
+            day2 = items_sorted[lodging_idx + 1:]
+
+            # order 연속 부여
+            order_no = 1
+            for it in day1:
+                it["order"] = order_no
+                order_no += 1
+            for it in day2:
+                it["order"] = order_no
+                order_no += 1
+
+            routes_out = {
+                "day1": day1,
+                "day2": day2
+            }
+        else:
+            # 당일치기: 단일 리스트 + order 재부여
+            for idx, it in enumerate(items_sorted, start=1):
+                it["order"] = idx
+            routes_out = items_sorted
 
         # 가나다순 정렬
         routes_out = sorted(items, key=lambda x: x["name"])
