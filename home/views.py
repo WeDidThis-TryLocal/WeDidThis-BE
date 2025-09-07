@@ -4,6 +4,7 @@ from rest_framework import status
 from .models import *
 from .serializers import PlaceItemSerializer
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from .services import get_address_from_place_name, get_coords_from_address, get_tour_info
 from .pictures import get_place_images
 from .experiences import DATA as EXPERIENCES_DATA
@@ -41,9 +42,10 @@ class PlaceItemAllView(APIView):
         data = serializer.data
 
         # 사용자 여행 내역
+        today = timezone.now().date()
         subs = (
             QuestionnaireSubmission.objects
-            .filter(user=request.user, route__isnull=False)
+            .filter(user=request.user, route__isnull=False, end_date__gte=today)
             .select_related("route")
         )
         latest = subs.order_by("-start_date", "-id").first()
