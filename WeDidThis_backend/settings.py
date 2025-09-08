@@ -32,6 +32,11 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
+CRSF_TRUSTED_ORIGINS = [
+    "https://we-did-this.com"
+]
+CRSF_COOKIE_SECURE = True
+
 
 # Application definition
 
