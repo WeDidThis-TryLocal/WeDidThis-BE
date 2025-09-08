@@ -16,8 +16,15 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import include, path
+from django.http import HttpResponse
+
+
+def root_view(request):
+    return HttpResponse("OK", status=200)
+
 
 urlpatterns = [
+    path('', root_view),
     path('admin/', admin.site.urls),
     path('accounts/', include('accounts.urls')),  # accounts 앱의 urls.py를 포함
     path('home/', include('home.urls')),  # home 앱의 urls.py를 포함
