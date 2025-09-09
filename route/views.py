@@ -282,18 +282,18 @@ class SubmissionBuildRouteView(APIView):
             "trip": "관광",
             "rest": "숙소",
         }
-        def null_if_blank(v):
-            if v is None:
-                return None
-            # 리스트/튜플 → 비어 있으면 None, 아니면 첫 요소로 축약
-            if isinstance(v, (list, tuple)):
-                if not v:            # [] 이면
-                    return None
-                v = v[0]             # ["", "…"] 같은 경우 첫 요소만 사용
-            if isinstance(v, str):
-                s = v.strip()
-                return s if s else None
-            return v
+        # def null_if_blank(v):
+        #     if v is None:
+        #         return None
+        #     # 리스트/튜플 → 비어 있으면 None, 아니면 첫 요소로 축약
+        #     if isinstance(v, (list, tuple)):
+        #         if not v:            # [] 이면
+        #             return None
+        #         v = v[0]             # ["", "…"] 같은 경우 첫 요소만 사용
+        #     if isinstance(v, str):
+        #         s = v.strip()
+        #         return s if s else None
+        #     return v
 
         # DB에서 GPT 입력 구성
         items = []
@@ -306,8 +306,8 @@ class SubmissionBuildRouteView(APIView):
                 # 임시추가(type_labels)
                 "type_label": TYPE_LABELS.get(p.type),
                 "address": p.address,
-                # "image_url": get_first_image(p.name),
-                "image_url": null_if_blank(get_first_image(p.name)),
+                "image_url": get_first_image(p.name),
+                # "image_url": null_if_blank(get_first_image(p.name)),
                 "latitude": float(p.latitude) if p.latitude is not None else None,
                 "longitude": float(p.longitude) if p.longitude is not None else None,
             })
@@ -347,6 +347,8 @@ class SubmissionBuildRouteView(APIView):
                     it["name"] = "오늘의 휴식처"
                 it["type"] = "rest"  # 통일
                 it["type_label"] = TYPE_LABELS["rest"]
+                # 임시 코드
+                it["image_url"] = None
 
         # ---------- 가나다순 정렬 ----------
         items_sorted = sorted(items, key=lambda x: x.get("name") or "")
