@@ -273,17 +273,17 @@ class SubmissionBuildRouteView(APIView):
             return Response({"error": "연결된 여행 계획이 없습니다."}, status=status.HTTP_400_BAD_REQUEST)
 
         # # 임시 추가(type_labels)
-        # TYPE_LABELS = {
-        #     "experience": "체험",
-        #     "cafe": "카페",
-        #     "restaurant": "식당",
-        #     "sightseeing": "관광",
-        #     "shopping": "쇼핑",
-        #     "park": "공원",
-        #     "museum": "박물관",
-        #     "rest": "숙소",
-        #     "lodging": "숙소",
-        # }
+        TYPE_LABELS = {
+            "experience": "체험",
+            "cafe": "카페",
+            "restaurant": "식당",
+            "sightseeing": "관광",
+            "shopping": "쇼핑",
+            "park": "공원",
+            "museum": "박물관",
+            "rest": "숙소",
+            "lodging": "숙소",
+        }
 
         # DB에서 GPT 입력 구성
         items = []
@@ -294,7 +294,7 @@ class SubmissionBuildRouteView(APIView):
                 "name": p.name,
                 "type": p.type,
                 # 임시추가(type_labels)
-                # "type_label": TYPE_LABELS.get(p.type),
+                "type_label": TYPE_LABELS.get(p.type),
                 "address": p.address,
                 "image_url": get_first_image(p.name),
                 "latitude": float(p.latitude) if p.latitude is not None else None,
@@ -315,61 +315,63 @@ class SubmissionBuildRouteView(APIView):
             )
         payload = build_gpt_payload(origin=origin, places=items, overnight=overnight)
 
-        gpt_result = call_gpt(GPT_SYSTEM_PROMPT, payload)
-        computed = gpt_result.get("routes")
+        # GPT 사용할 경우(시작)
+        # gpt_result = call_gpt(GPT_SYSTEM_PROMPT, payload)
+        # computed = gpt_result.get("routes")
 
-        # 응답 포맷 정리
-        if isinstance(computed, dict) and "day1" in computed:
-            routes_out = {
-                "day1": clean_for_response_list(computed["day1"]),
-                "day2": clean_for_response_list(computed.get("day2", []))
-            }
-        else:
-            routes_out = clean_for_response_list(computed or [])
-
-        # # 숙소 이름/라벨 보정
-        # for it in items:
-        #     if it.get("type") in ("rest", "lodging"):
-        #         if not (it.get("name") or "").strip():
-        #             it["name"] = "오늘의 휴식처"
-        #         it["type"] = "rest"  # 통일
-        #         it["type_label"] = TYPE_LABELS["rest"]
-
-        # # ---------- 가나다순 정렬 ----------
-        # items_sorted = sorted(items, key=lambda x: x.get("name") or "")
-
-        # # ---------- 포맷: 당일 / 1박2일 ----------
-        # has_lodging = any(it.get("type") in ("rest", "lodging") for it in items_sorted)
-        # if overnight and has_lodging:
-        #     # 첫 번째 숙소를 기준으로 day1/day2 분리 (숙소는 day1 마지막에 포함)
-        #     lodging_idx = next(
-        #         (i for i, it in enumerate(items_sorted) if it.get("type") in ("rest", "lodging")),
-        #         len(items_sorted) - 1
-        #     )
-        #     day1 = items_sorted[:lodging_idx + 1]
-        #     day2 = items_sorted[lodging_idx + 1:]
-
-        #     # order 연속 부여
-        #     order_no = 1
-        #     for it in day1:
-        #         it["order"] = order_no
-        #         order_no += 1
-        #     for it in day2:
-        #         it["order"] = order_no
-        #         order_no += 1
-
+        # # 응답 포맷 정리
+        # if isinstance(computed, dict) and "day1" in computed:
         #     routes_out = {
-        #         "day1": day1,
-        #         "day2": day2
+        #         "day1": clean_for_response_list(computed["day1"]),
+        #         "day2": clean_for_response_list(computed.get("day2", []))
         #     }
         # else:
-        #     # 당일치기: 단일 리스트 + order 재부여
-        #     for idx, it in enumerate(items_sorted, start=1):
-        #         it["order"] = idx
-        #     routes_out = items_sorted
+        #     routes_out = clean_for_response_list(computed or [])
+        # GPT 사용할 경우(끝)
 
-        # # 가나다순 정렬
-        # routes_out = sorted(items, key=lambda x: x["name"])
+        # 숙소 이름/라벨 보정
+        for it in items:
+            if it.get("type") in ("rest", "lodging"):
+                if not (it.get("name") or "").strip():
+                    it["name"] = "오늘의 휴식처"
+                it["type"] = "rest"  # 통일
+                it["type_label"] = TYPE_LABELS["rest"]
+
+        # ---------- 가나다순 정렬 ----------
+        items_sorted = sorted(items, key=lambda x: x.get("name") or "")
+
+        # ---------- 포맷: 당일 / 1박2일 ----------
+        has_lodging = any(it.get("type") in ("rest", "lodging") for it in items_sorted)
+        if overnight and has_lodging:
+            # 첫 번째 숙소를 기준으로 day1/day2 분리 (숙소는 day1 마지막에 포함)
+            lodging_idx = next(
+                (i for i, it in enumerate(items_sorted) if it.get("type") in ("rest", "lodging")),
+                len(items_sorted) - 1
+            )
+            day1 = items_sorted[:lodging_idx + 1]
+            day2 = items_sorted[lodging_idx + 1:]
+
+            # order 연속 부여
+            order_no = 1
+            for it in day1:
+                it["order"] = order_no
+                order_no += 1
+            for it in day2:
+                it["order"] = order_no
+                order_no += 1
+
+            routes_out = {
+                "day1": day1,
+                "day2": day2
+            }
+        else:
+            # 당일치기: 단일 리스트 + order 재부여
+            for idx, it in enumerate(items_sorted, start=1):
+                it["order"] = idx
+            routes_out = items_sorted
+
+        # 가나다순 정렬
+        routes_out = sorted(items, key=lambda x: x["name"])
 
         # DB 저장
         with transaction.atomic():
