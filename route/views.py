@@ -278,13 +278,9 @@ class SubmissionBuildRouteView(APIView):
         TYPE_LABELS = {
             "experience": "체험",
             "cafe": "카페",
-            "restaurant": "식당",
-            "sightseeing": "관광",
-            "shopping": "쇼핑",
-            "park": "공원",
-            "museum": "박물관",
+            "festival": "축제",
+            "trip": "관광",
             "rest": "숙소",
-            "lodging": "숙소",
         }
         def null_if_blank(v):
             if v is None:
