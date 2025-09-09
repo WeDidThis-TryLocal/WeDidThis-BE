@@ -305,7 +305,7 @@ class SubmissionBuildRouteView(APIView):
         if plan.origin_latitude is not None and plan.origin_longitude is not None:
             origin = {"latitude": float(plan.origin_latitude), "longitude": float(plan.origin_longitude)}
 
-        overnight = bool(plan.lodging_address) or (plan.start_date != plan.end_date)
+        overnight = bool(plan.start_date and plan.end_date and str(plan.start_date) != str(plan.end_date))
         if overnight:
             items = ensure_lodging_included(
                 items,
@@ -313,9 +313,9 @@ class SubmissionBuildRouteView(APIView):
                 lat=float(plan.lodging_latitude) if plan.lodging_latitude is not None else None,
                 lon=float(plan.lodging_longitude) if plan.lodging_longitude is not None else None,
             )
-        payload = build_gpt_payload(origin=origin, places=items, overnight=overnight)
-
         # GPT 사용할 경우(시작)
+        # payload = build_gpt_payload(origin=origin, places=items, overnight=overnight)
+
         # gpt_result = call_gpt(GPT_SYSTEM_PROMPT, payload)
         # computed = gpt_result.get("routes")
 
@@ -341,11 +341,11 @@ class SubmissionBuildRouteView(APIView):
         items_sorted = sorted(items, key=lambda x: x.get("name") or "")
 
         # ---------- 포맷: 당일 / 1박2일 ----------
-        has_lodging = any(it.get("type") in ("rest", "lodging") for it in items_sorted)
+        has_lodging = any(it.get("type") =="rest" for it in items_sorted)
         if overnight and has_lodging:
             # 첫 번째 숙소를 기준으로 day1/day2 분리 (숙소는 day1 마지막에 포함)
             lodging_idx = next(
-                (i for i, it in enumerate(items_sorted) if it.get("type") in ("rest", "lodging")),
+                (i for i, it in enumerate(items_sorted) if it.get("type") == "rest"),
                 len(items_sorted) - 1
             )
             day1 = items_sorted[:lodging_idx + 1]
@@ -371,7 +371,7 @@ class SubmissionBuildRouteView(APIView):
             routes_out = items_sorted
 
         # 가나다순 정렬
-        routes_out = sorted(items, key=lambda x: x["name"])
+        # routes_out = sorted(items, key=lambda x: x["name"])
 
         # DB 저장
         with transaction.atomic():
