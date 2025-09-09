@@ -358,6 +358,7 @@ class SubmissionBuildRouteView(APIView):
         #     routes_out = clean_for_response_list(computed or [])
         # GPT 사용할 경우(끝)
 
+        # 배포용(시작)
         # 숙소 이름/라벨 보정
         for it in items:
             if it.get("type") in ("rest", "lodging"):
@@ -399,14 +400,18 @@ class SubmissionBuildRouteView(APIView):
                 it["order"] = idx
             routes_out = items_sorted
 
-        # 임시 추가(force_image_rules)
         routes_out = _force_image_rules(routes_out)
         routes_for_response = copy.deepcopy(routes_out)
+        # 배포용(끝)
 
         # DB 저장
         with transaction.atomic():
+            # 임시 추가(routes_for_save)
             routes_for_save = copy.deepcopy(routes_out)
+            # 배포용
             saved_route = save_gpt_route_as_route(routes_for_save, route_name="나의 여정")
+            # GPT용
+            # saved_route = save_gpt_route_as_route(routes_out, route_name="나의 여정")
             submission.route = saved_route
             submission.start_date = plan.start_date
             submission.end_date = plan.end_date
