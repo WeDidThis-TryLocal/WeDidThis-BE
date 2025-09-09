@@ -243,6 +243,7 @@ class TravelPlanCreateView(APIView):
         return Response(detail, status=status.HTTP_201_CREATED)
 
 
+# 임시 추가(force_image_rules)
 # === 응답 직전 강제 정규화 ===
 def _force_image_rules(routes):
     def _fix(it):
@@ -311,18 +312,6 @@ class SubmissionBuildRouteView(APIView):
             "trip": "관광",
             "rest": "숙소",
         }
-        # def null_if_blank(v):
-        #     if v is None:
-        #         return None
-        #     # 리스트/튜플 → 비어 있으면 None, 아니면 첫 요소로 축약
-        #     if isinstance(v, (list, tuple)):
-        #         if not v:            # [] 이면
-        #             return None
-        #         v = v[0]             # ["", "…"] 같은 경우 첫 요소만 사용
-        #     if isinstance(v, str):
-        #         s = v.strip()
-        #         return s if s else None
-        #     return v
 
         # DB에서 GPT 입력 구성
         items = []
@@ -410,6 +399,7 @@ class SubmissionBuildRouteView(APIView):
                 it["order"] = idx
             routes_out = items_sorted
 
+        # 임시 추가(force_image_rules)
         routes_out = _force_image_rules(routes_out)
         routes_for_response = copy.deepcopy(routes_out)
 
