@@ -7,6 +7,8 @@ from django.db.models.functions import Lower
 from openai import OpenAI
 import json
 
+import copy
+
 from .models import Route
 from .serializers import *
 from home.models import PlaceItem
@@ -370,12 +372,12 @@ class SubmissionBuildRouteView(APIView):
                 it["order"] = idx
             routes_out = items_sorted
 
-        # 가나다순 정렬
-        # routes_out = sorted(items, key=lambda x: x["name"])
+        routes_for_response = copy.deepcopy(routes_out)
 
         # DB 저장
         with transaction.atomic():
-            saved_route = save_gpt_route_as_route(routes_out, route_name="나의 여정")
+            routes_for_save = copy.deepcopy(routes_out)
+            saved_route = save_gpt_route_as_route(routes_for_save, route_name="나의 여정")
             submission.route = saved_route
             submission.start_date = plan.start_date
             submission.end_date = plan.end_date
@@ -384,7 +386,7 @@ class SubmissionBuildRouteView(APIView):
         route_body = {
             "id": saved_route.id,
             "name": "나의 여정",
-            "routes": routes_out,
+            "routes": routes_for_response,
         }
         payload_key = "route_overnight" if is_overnight(submission) else "route"
 
