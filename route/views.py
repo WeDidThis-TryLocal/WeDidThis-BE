@@ -274,7 +274,7 @@ class SubmissionBuildRouteView(APIView):
         if not plan:
             return Response({"error": "연결된 여행 계획이 없습니다."}, status=status.HTTP_400_BAD_REQUEST)
 
-        # # 임시 추가(type_labels)
+        # # 임시 추가
         TYPE_LABELS = {
             "experience": "체험",
             "cafe": "카페",
@@ -286,6 +286,8 @@ class SubmissionBuildRouteView(APIView):
             "rest": "숙소",
             "lodging": "숙소",
         }
+        def null_if_blank(v):
+            return None if v is None or (isinstance(v, str) and v.strip() == "") else v
 
         # DB에서 GPT 입력 구성
         items = []
@@ -298,7 +300,8 @@ class SubmissionBuildRouteView(APIView):
                 # 임시추가(type_labels)
                 "type_label": TYPE_LABELS.get(p.type),
                 "address": p.address,
-                "image_url": get_first_image(p.name),
+                # "image_url": get_first_image(p.name),
+                "image_url": null_if_blank(get_first_image(p.name)),
                 "latitude": float(p.latitude) if p.latitude is not None else None,
                 "longitude": float(p.longitude) if p.longitude is not None else None,
             })
