@@ -243,6 +243,35 @@ class TravelPlanCreateView(APIView):
         return Response(detail, status=status.HTTP_201_CREATED)
 
 
+# === 응답 직전 강제 정규화 ===
+def _force_image_rules(routes):
+    def _fix(it):
+        t = (it.get("type") or "").strip().lower()
+        v = it.get("image_url")
+
+        # 리스트/튜플이면 첫 요소만, 비어있으면 None
+        if isinstance(v, (list, tuple)):
+            v = v[0] if v else None
+        # 공백 문자열이면 None
+        if isinstance(v, str) and not v.strip():
+            v = None
+
+        # 숙소는 무조건 None
+        if t in ("rest", "lodging"):
+            v = None
+
+        it["image_url"] = v
+
+    if isinstance(routes, dict):           # {"day1": [...], "day2": [...]}
+        for day in ("day1", "day2"):
+            for it in routes.get(day, []):
+                _fix(it)
+    else:                                  # 단일 리스트
+        for it in routes:
+            _fix(it)
+    return routes
+
+
 # 직접 경로 설정 - GPT route 추가
 @permission_classes([IsAuthenticated, IsTouristUser])
 class SubmissionBuildRouteView(APIView):
@@ -347,8 +376,6 @@ class SubmissionBuildRouteView(APIView):
                     it["name"] = "오늘의 휴식처"
                 it["type"] = "rest"  # 통일
                 it["type_label"] = TYPE_LABELS["rest"]
-                # 임시 코드
-                it["image_url"] = None
 
         # ---------- 가나다순 정렬 ----------
         items_sorted = sorted(items, key=lambda x: x.get("name") or "")
@@ -383,6 +410,7 @@ class SubmissionBuildRouteView(APIView):
                 it["order"] = idx
             routes_out = items_sorted
 
+        routes_out = _force_image_rules(routes_out)
         routes_for_response = copy.deepcopy(routes_out)
 
         # DB 저장
