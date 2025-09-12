@@ -345,7 +345,7 @@ DATA = {
         {
             "name": "가야산",
             "links": [
-                "http://tong.visitkorea.or.kr/cms2/website/43/2620343.jpg",
+                "https://tong.visitkorea.or.kr/cms2/website/43/2620343.jpg",
                 "https://trylocalbucket.s3.ap-northeast-2.amazonaws.com/%EA%B0%80%EC%95%BC%EC%82%B0/%EA%B0%80%EC%95%BC%EC%82%B01.jpg",
                 "https://trylocalbucket.s3.ap-northeast-2.amazonaws.com/%EA%B0%80%EC%95%BC%EC%82%B0/%EA%B0%80%EC%95%BC%EC%82%B02.jpg",
                 "https://trylocalbucket.s3.ap-northeast-2.amazonaws.com/%EA%B0%80%EC%95%BC%EC%82%B0/%EA%B0%80%EC%95%BC%EC%82%B03.jpg",
