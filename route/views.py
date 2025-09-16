@@ -422,7 +422,7 @@ class SubmissionBuildRouteView(APIView):
             # 임시추가(배포용)
             # "routes": routes_for_response,
             # GPT용
-            "routes": routes_out
+            "routes": saved_route
         }
         payload_key = "route_overnight" if is_overnight(submission) else "route"
 
