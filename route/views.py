@@ -335,6 +335,7 @@ class SubmissionBuildRouteView(APIView):
                 "latitude": float(p.latitude) if p.latitude is not None else None,
                 "longitude": float(p.longitude) if p.longitude is not None else None,
             })
+        print(items)
 
         origin = None
         if plan.origin_latitude is not None and plan.origin_longitude is not None:
@@ -362,6 +363,7 @@ class SubmissionBuildRouteView(APIView):
             }
         else:
             routes_out = clean_for_response_list(computed or [])
+        print(routes_out)
         # GPT 사용할 경우(끝)
 
         # 배포용(시작)
