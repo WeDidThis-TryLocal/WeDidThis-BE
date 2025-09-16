@@ -6,6 +6,7 @@ from django.shortcuts import get_object_or_404
 from django.db.models.functions import Lower
 from openai import OpenAI
 import json
+import logging
 
 import copy
 
@@ -117,15 +118,20 @@ def ensure_lodging_included(items, lodging_address, lat, lon):
 
 def call_gpt(system_prompt, payload):
     client = OpenAI(api_key=settings.OPENAI_API_KEY)
-    resp = client.chat.completions.create(
-        model="gpt-5",
-        messages=[
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": json.dumps(payload, ensure_ascii=False, separators=(',', ':'))}
-        ],
-        response_format={"type": "json_object"}
-    )
-    return json.loads(resp.choices[0].message.content)
+    try:
+        resp = client.chat.completions.create(
+            model="gpt-5",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": json.dumps(payload, ensure_ascii=False, separators=(',', ':'))}
+            ],
+            response_format={"type": "json_object"},
+            timeout = 30
+        )
+        return json.loads(resp.choices[0].message.content)
+    except Exception as e:
+        logging.getLogger(__name__).exception("OpenAI 호출 실패")
+        raise
 
 
 # 고정 경로 등록
@@ -422,7 +428,7 @@ class SubmissionBuildRouteView(APIView):
             # 임시추가(배포용)
             # "routes": routes_for_response,
             # GPT용
-            "routes": saved_route
+            "routes": routes_out
         }
         payload_key = "route_overnight" if is_overnight(submission) else "route"
 
