@@ -251,32 +251,32 @@ class TravelPlanCreateView(APIView):
 
 # 임시 추가(force_image_rules)
 # # === 응답 직전 강제 정규화 ===
-# def _force_image_rules(routes):
-#     def _fix(it):
-#         t = (it.get("type") or "").strip().lower()
-#         v = it.get("image_url")
+def _force_image_rules(routes):
+    def _fix(it):
+        t = (it.get("type") or "").strip().lower()
+        v = it.get("image_url")
 
-#         # 리스트/튜플이면 첫 요소만, 비어있으면 None
-#         if isinstance(v, (list, tuple)):
-#             v = v[0] if v else None
-#         # 공백 문자열이면 None
-#         if isinstance(v, str) and not v.strip():
-#             v = None
+        # 리스트/튜플이면 첫 요소만, 비어있으면 None
+        if isinstance(v, (list, tuple)):
+            v = v[0] if v else None
+        # 공백 문자열이면 None
+        if isinstance(v, str) and not v.strip():
+            v = None
 
-#         # 숙소는 무조건 None
-#         if t in ("rest", "lodging"):
-#             v = None
+        # 숙소는 무조건 None
+        if t in ("rest", "lodging"):
+            v = None
 
-#         it["image_url"] = v
+        it["image_url"] = v
 
-#     if isinstance(routes, dict):           # {"day1": [...], "day2": [...]}
-#         for day in ("day1", "day2"):
-#             for it in routes.get(day, []):
-#                 _fix(it)
-#     else:                                  # 단일 리스트
-#         for it in routes:
-#             _fix(it)
-#     return routes
+    if isinstance(routes, dict):           # {"day1": [...], "day2": [...]}
+        for day in ("day1", "day2"):
+            for it in routes.get(day, []):
+                _fix(it)
+    else:                                  # 단일 리스트
+        for it in routes:
+            _fix(it)
+    return routes
 
 
 # 직접 경로 설정 - GPT route 추가
@@ -311,13 +311,13 @@ class SubmissionBuildRouteView(APIView):
             return Response({"error": "연결된 여행 계획이 없습니다."}, status=status.HTTP_400_BAD_REQUEST)
 
         # # 임시 추가(Type_labels)
-        # TYPE_LABELS = {
-        #     "experience": "체험",
-        #     "cafe": "카페",
-        #     "festival": "축제",
-        #     "trip": "관광",
-        #     "rest": "숙소",
-        # }
+        TYPE_LABELS = {
+            "experience": "체험",
+            "cafe": "카페",
+            "festival": "축제",
+            "trip": "관광",
+            "rest": "숙소",
+        }
 
         # DB에서 GPT 입력 구성
         items = []
@@ -328,10 +328,9 @@ class SubmissionBuildRouteView(APIView):
                 "name": p.name,
                 "type": p.type,
                 # 임시추가(type_labels)
-                # "type_label": TYPE_LABELS.get(p.type),
+                "type_label": TYPE_LABELS.get(p.type),
                 "address": p.address,
-                # "image_url": get_first_image(p.name),
-                "image_url": "",
+                "image_url": get_first_image(p.name),
                 "latitude": float(p.latitude) if p.latitude is not None else None,
                 "longitude": float(p.longitude) if p.longitude is not None else None,
             })
@@ -350,76 +349,76 @@ class SubmissionBuildRouteView(APIView):
                 lon=float(plan.lodging_longitude) if plan.lodging_longitude is not None else None,
             )
         # GPT 사용할 경우(시작)
-        payload = build_gpt_payload(origin=origin, places=items, overnight=overnight)
+        # payload = build_gpt_payload(origin=origin, places=items, overnight=overnight)
 
-        gpt_result = call_gpt(GPT_SYSTEM_PROMPT, payload)
-        computed = gpt_result.get("routes")
+        # gpt_result = call_gpt(GPT_SYSTEM_PROMPT, payload)
+        # computed = gpt_result.get("routes")
 
-        # 응답 포맷 정리
-        if isinstance(computed, dict) and "day1" in computed:
-            routes_out = {
-                "day1": clean_for_response_list(computed["day1"]),
-                "day2": clean_for_response_list(computed.get("day2", []))
-            }
-        else:
-            routes_out = clean_for_response_list(computed or [])
-        print(routes_out)
+        # # 응답 포맷 정리
+        # if isinstance(computed, dict) and "day1" in computed:
+        #     routes_out = {
+        #         "day1": clean_for_response_list(computed["day1"]),
+        #         "day2": clean_for_response_list(computed.get("day2", []))
+        #     }
+        # else:
+        #     routes_out = clean_for_response_list(computed or [])
+        # print(routes_out)
         # GPT 사용할 경우(끝)
 
         # 배포용(시작)
-        # # 숙소 이름/라벨 보정
-        # for it in items:
-        #     if it.get("type") in ("rest", "lodging"):
-        #         if not (it.get("name") or "").strip():
-        #             it["name"] = "오늘의 휴식처"
-        #         it["type"] = "rest"  # 통일
-        #         it["type_label"] = TYPE_LABELS["rest"]
+        # 숙소 이름/라벨 보정
+        for it in items:
+            if it.get("type") in ("rest", "lodging"):
+                if not (it.get("name") or "").strip():
+                    it["name"] = "오늘의 휴식처"
+                it["type"] = "rest"  # 통일
+                it["type_label"] = TYPE_LABELS["rest"]
 
-        # # ---------- 가나다순 정렬 ----------
-        # items_sorted = sorted(items, key=lambda x: x.get("name") or "")
+        # ---------- 가나다순 정렬 ----------
+        items_sorted = sorted(items, key=lambda x: x.get("name") or "")
 
-        # # ---------- 포맷: 당일 / 1박2일 ----------
-        # has_lodging = any(it.get("type") =="rest" for it in items_sorted)
-        # if overnight and has_lodging:
-        #     # 첫 번째 숙소를 기준으로 day1/day2 분리 (숙소는 day1 마지막에 포함)
-        #     lodging_idx = next(
-        #         (i for i, it in enumerate(items_sorted) if it.get("type") == "rest"),
-        #         len(items_sorted) - 1
-        #     )
-        #     day1 = items_sorted[:lodging_idx + 1]
-        #     day2 = items_sorted[lodging_idx + 1:]
+        # ---------- 포맷: 당일 / 1박2일 ----------
+        has_lodging = any(it.get("type") =="rest" for it in items_sorted)
+        if overnight and has_lodging:
+            # 첫 번째 숙소를 기준으로 day1/day2 분리 (숙소는 day1 마지막에 포함)
+            lodging_idx = next(
+                (i for i, it in enumerate(items_sorted) if it.get("type") == "rest"),
+                len(items_sorted) - 1
+            )
+            day1 = items_sorted[:lodging_idx + 1]
+            day2 = items_sorted[lodging_idx + 1:]
 
-        #     # order 연속 부여
-        #     order_no = 1
-        #     for it in day1:
-        #         it["order"] = order_no
-        #         order_no += 1
-        #     for it in day2:
-        #         it["order"] = order_no
-        #         order_no += 1
+            # order 연속 부여
+            order_no = 1
+            for it in day1:
+                it["order"] = order_no
+                order_no += 1
+            for it in day2:
+                it["order"] = order_no
+                order_no += 1
 
-        #     routes_out = {
-        #         "day1": day1,
-        #         "day2": day2
-        #     }
-        # else:
-        #     # 당일치기: 단일 리스트 + order 재부여
-        #     for idx, it in enumerate(items_sorted, start=1):
-        #         it["order"] = idx
-        #     routes_out = items_sorted
+            routes_out = {
+                "day1": day1,
+                "day2": day2
+            }
+        else:
+            # 당일치기: 단일 리스트 + order 재부여
+            for idx, it in enumerate(items_sorted, start=1):
+                it["order"] = idx
+            routes_out = items_sorted
 
-        # routes_out = _force_image_rules(routes_out)
-        # routes_for_response = copy.deepcopy(routes_out)
+        routes_out = _force_image_rules(routes_out)
+        routes_for_response = copy.deepcopy(routes_out)
         # 배포용(끝)
 
         # DB 저장
         with transaction.atomic():
             # 임시 추가(routes_for_save)
-            # routes_for_save = copy.deepcopy(routes_out)
+            routes_for_save = copy.deepcopy(routes_out)
             # 배포용
-            # saved_route = save_gpt_route_as_route(routes_for_save, route_name="나의 여정")
+            saved_route = save_gpt_route_as_route(routes_for_save, route_name="나의 여정")
             # GPT용
-            saved_route = save_gpt_route_as_route(routes_out, route_name="나의 여정")
+            # saved_route = save_gpt_route_as_route(routes_out, route_name="나의 여정")
             submission.route = saved_route
             submission.start_date = plan.start_date
             submission.end_date = plan.end_date
@@ -429,9 +428,9 @@ class SubmissionBuildRouteView(APIView):
             "id": saved_route.id,
             "name": "나의 여정",
             # 임시추가(배포용)
-            # "routes": routes_for_response,
+            "routes": routes_for_response,
             ## GPT용
-            "routes": routes_out
+            # "routes": routes_out
         }
         payload_key = "route_overnight" if is_overnight(submission) else "route"
 
