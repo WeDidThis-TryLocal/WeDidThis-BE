@@ -10,7 +10,7 @@ import logging
 
 import copy
 
-from .models import Route
+from .models import Route, RouteStop
 from .serializers import *
 from home.models import PlaceItem
 from home.views import get_first_image
@@ -428,7 +428,7 @@ class SubmissionBuildRouteView(APIView):
             # 임시추가(배포용)
             # "routes": routes_for_response,
             # GPT용
-            "routes": saved_route
+            "routes": routes_out
         }
         payload_key = "route_overnight" if is_overnight(submission) else "route"
 
