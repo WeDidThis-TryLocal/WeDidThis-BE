@@ -330,7 +330,8 @@ class SubmissionBuildRouteView(APIView):
                 # 임시추가(type_labels)
                 # "type_label": TYPE_LABELS.get(p.type),
                 "address": p.address,
-                "image_url": get_first_image(p.name),
+                # "image_url": get_first_image(p.name),
+                "image_url": "",
                 "latitude": float(p.latitude) if p.latitude is not None else None,
                 "longitude": float(p.longitude) if p.longitude is not None else None,
             })
