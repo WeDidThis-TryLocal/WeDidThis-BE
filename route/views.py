@@ -304,7 +304,7 @@ class SubmissionBuildRouteView(APIView):
         if not plan:
             return Response({"error": "연결된 여행 계획이 없습니다."}, status=status.HTTP_400_BAD_REQUEST)
 
-        # # 임시 추가
+        # # 임시 추가(Type_labels)
         # TYPE_LABELS = {
         #     "experience": "체험",
         #     "cafe": "카페",
@@ -422,7 +422,7 @@ class SubmissionBuildRouteView(APIView):
             # 임시추가(배포용)
             # "routes": routes_for_response,
             # GPT용
-            "routes": saved_route
+            "routes": routes_out
         }
         payload_key = "route_overnight" if is_overnight(submission) else "route"
 
