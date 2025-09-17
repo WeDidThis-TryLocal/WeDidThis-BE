@@ -53,6 +53,7 @@ class PlaceItemAllView(APIView):
         if latest:
             my_travel = [{
                 "submission_id": latest.id,
+                "name": latest.name,
                 "date": {
                     "start_date": latest.start_date,
                     "end_date": latest.end_date
