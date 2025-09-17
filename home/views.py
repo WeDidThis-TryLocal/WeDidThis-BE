@@ -51,9 +51,10 @@ class PlaceItemAllView(APIView):
         latest = subs.order_by("-start_date", "-id").first()
 
         if latest:
+            route = latest.route
             my_travel = [{
                 "submission_id": latest.id,
-                "name": latest.name,
+                "name": route.name,
                 "date": {
                     "start_date": latest.start_date,
                     "end_date": latest.end_date
