@@ -55,7 +55,8 @@ DATA = {
                 "https://trylocalbucket.s3.ap-northeast-2.amazonaws.com/%EA%B3%A0%EC%86%8C%EC%95%A0%EB%86%8D%EC%9E%A5/KakaoTalk_20250809_153241716_09.jpg",
                 "https://trylocalbucket.s3.ap-northeast-2.amazonaws.com/%EA%B3%A0%EC%86%8C%EC%95%A0%EB%86%8D%EC%9E%A5/KakaoTalk_20250809_153241716_02.jpg",
                 "https://trylocalbucket.s3.ap-northeast-2.amazonaws.com/%EA%B3%A0%EC%86%8C%EC%95%A0%EB%86%8D%EC%9E%A5/KakaoTalk_20250809_153241716_03.jpg",
-                "https://trylocalbucket.s3.ap-northeast-2.amazonaws.com/%EA%B3%A0%EC%86%8C%EC%95%A0%EB%86%8D%EC%9E%A5/KakaoTalk_20250809_153241716_04.jpg"
+                "https://trylocalbucket.s3.ap-northeast-2.amazonaws.com/%EA%B3%A0%EC%86%8C%EC%95%A0%EB%86%8D%EC%9E%A5/KakaoTalk_20250809_153241716_04.jpg",
+                "https://trylocalbucket.s3.ap-northeast-2.amazonaws.com/%EA%B3%A0%EC%86%8C%EC%95%A0%EB%86%8D%EC%9E%A5/%EA%B1%B4%EA%B0%95%EC%95%A0%EA%B5%B3.jpg"
             ]
         },
         {
