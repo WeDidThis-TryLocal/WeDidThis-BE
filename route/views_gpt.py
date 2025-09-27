@@ -126,7 +126,6 @@ def call_gpt(system_prompt, payload):
                 {"role": "user", "content": json.dumps(payload, ensure_ascii=False, separators=(',', ':'))}
             ],
             response_format={"type": "json_object"},
-            timeout = 30
         )
         return json.loads(resp.choices[0].message.content)
     except Exception as e:
