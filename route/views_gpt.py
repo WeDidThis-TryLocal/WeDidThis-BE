@@ -321,7 +321,7 @@ class RouteBuildForwardView(APIView):
                     json=json_payload,
                     data=form_payload,
                     headers=headers,
-                    timeout=(30, 300),
+                    timeout=(5, 300),
                 )
                 cth = resp.headers.get("Content-Type", "")
                 if "application/json" in cth:
