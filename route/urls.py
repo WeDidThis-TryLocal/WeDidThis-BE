@@ -1,6 +1,5 @@
 from django.urls import path
-from .views import *
-
+from .views_logic import *
 from .views_gpt import SubmissionBuildRoutebyGPTView
 
 
