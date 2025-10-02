@@ -7,7 +7,6 @@ from django.db.models.functions import Lower
 from openai import OpenAI
 import json
 import logging
-import requests
 
 from .models import Route, RouteStop
 from .serializers import *
@@ -21,7 +20,6 @@ from home.permissions import IsTouristUser
 
 TYPE_LABEL_MAP = dict(PlaceItem.TYPE_CHOICES)
 REST_CODE = PlaceItem.REST
-ROUTE_BUILDER_BASE = settings.ROUTE_BUILDER_BASE
 
 
 def inject_type_label(item):
@@ -280,59 +278,6 @@ class TravelPlanCreateView(APIView):
         detail["message"] = "저장완료"
 
         return Response(detail, status=status.HTTP_201_CREATED)
-    
-
-@permission_classes([IsAuthenticated, IsTouristUser])
-class RouteBuildForwardView(APIView):
-    """
-    프론트로부터 들어온 POST 요청을 서버 사이드에서 POST 재요청 후 응답을 그대로 돌려주는 함수
-    """
-    def post(self, request):
-            submission_id = request.GET.get("submission_id") or request.data.get("submission_id")
-            if not submission_id:
-                return Response({"error": "submission_id 값이 존재하지 않습니다."}, status=status.HTTP_400_BAD_REQUEST)
-
-            rebuild = request.GET.get("rebuild") or request.data.get("rebuild")
-
-            target_url = f"{ROUTE_BUILDER_BASE}/route/build-gpt"
-            params = {"submission_id": submission_id}
-            if rebuild is not None:
-                params["rebuild"] = str(rebuild).lower()
-
-            headers = {}
-            if (auth := request.META.get("HTTP_AUTHORIZATION")):
-                headers["Authorization"] = auth
-            if (xff := request.META.get("HTTP_X_FORWARDED_FOR") or request.META.get("REMOTE_ADDR")):
-                headers["X-Forwarded-For"] = xff
-
-            json_payload, form_payload = None, None
-            if "application/json" in (request.content_type or "").lower():
-                try:
-                    json_payload = json.loads(request.body.decode("utf-8") or "{}")
-                except Exception:
-                    json_payload = {}
-            else:
-                form_payload = request.data
-
-            try:
-                resp = requests.post(
-                    target_url,
-                    params=params,
-                    json=json_payload,
-                    data=form_payload,
-                    headers=headers,
-                    timeout=(5, 300),
-                )
-                cth = resp.headers.get("Content-Type", "")
-                if "application/json" in cth:
-                    try:
-                        return Response(resp.json(), status=resp.status_code)
-                    except ValueError:
-                        return Response({"raw": resp.text}, status=resp.status_code)
-                return Response({"raw": resp.text}, status=resp.status_code)
-
-            except requests.RequestException as e:
-                return Response({"error": str(e)}, status=status.HTTP_502_BAD_GATEWAY)
 
 
 # 직접 경로 설정 - GPT 경로 생성
