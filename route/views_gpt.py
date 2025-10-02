@@ -8,8 +8,6 @@ from openai import OpenAI
 import json
 import logging
 
-import copy
-
 from .models import Route, RouteStop
 from .serializers import *
 from home.models import PlaceItem
