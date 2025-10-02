@@ -294,7 +294,7 @@ class RouteBuildForwardView(APIView):
 
             rebuild = request.GET.get("rebuild") or request.data.get("rebuild")
 
-            target_url = f"{ROUTE_BUILDER_BASE}/route/build"
+            target_url = f"{ROUTE_BUILDER_BASE}/route/build-gpt"
             params = {"submission_id": submission_id}
             if rebuild is not None:
                 params["rebuild"] = str(rebuild).lower()
