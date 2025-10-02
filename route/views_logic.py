@@ -446,7 +446,175 @@ class TravelPlanCreateView(APIView):
 #         return Response(out, status=status.HTTP_201_CREATED)
 
 
+def haversine_km(lat1, lon1, lat2, lon2):
+    """Harversine distance (km) - None 좌표가 있으면 큰 값 반환하여 선택되지 않게."""
+    if None in (lat1, lon1, lat2, lon2):
+        return float('inf')
+    R = 6371  # 지구 반경 (km)
+    phi1, phi2 = math.radians(lat1), math.radians(lat2)
+    dphi = math.radians(lat2 - lat1)
+    dlmb = math.radians(lon2 - lon1)
+    a = math.sin(dphi / 2) ** 2 + math.cos(phi1) * math.cos(phi2) * math.sin(dlmb / 2) ** 2
+    return 2 * R * math.asin(math.sqrt(a))
 
+
+def nearest_neighbor_order(origin, places):
+    remaining = places[:]
+    cur = {"latitude": origin.get("latitude"), "longitude": origin.get("longitude")}
+    ordered = []
+    while remaining:
+        # 가장 가까운 장소 찾기
+        best = None
+        best_d = float('inf')
+        for it in remaining:
+            d = haversine_km(cur["latitude"], cur["longitude"], it.get("latitude"), it.get("longitude"))
+            if d < best_d:
+                best, best_d = it, d
+            elif d == best_d:
+                k1 = (it.get("name") or "", it.get("address") or "")
+                k2 = (best.get("name") or "", best.get("address") or "")
+                if k1 < k2:
+                    best = it
+        ordered.append(best)
+        cur = {"latitude": best.get("latitude"), "longitude": best.get("longitude")}
+        remaining.remove(best)
+    return ordered
+
+
+def split_overnight_lists(ordered_with_rest):
+    rest_idx = next((i for i, it in enumerate(ordered_with_rest) if it.get("type") == REST_CODE), None)
+    if rest_idx is None:
+        return ordered_with_rest, []
+    
+    day1 = ordered_with_rest[:rest_idx + 1]  # 숙소 포함
+    day2 = ordered_with_rest[rest_idx + 1:]  # 숙소 이후
+
+    non_rest_count = sum(1 for it in ordered_with_rest if it.get("type") != REST_CODE)
+    if non_rest_count >= 2 and len(day2) == 0:
+        # 숙소 이후 일정이 없으면, day1의 마지막 장소를 day2로 이동
+        for i in range(len(day1) -2, -1, -1):
+            if day1[i].get("type") != REST_CODE:
+                move = day1.pop(i)
+                day2 = [move] + day2
+                break
+
+    return day1, day2
+
+
+def place_item_to_payload(p):
+    return {
+        "name": p.name,
+        "type": p.type,
+        "type_label": p.get_type_display(),
+        "address": p.address,
+        "latitude": float(p.latitude) if p.latitude is not None else None,
+        "longitude": float(p.longitude) if p.longitude is not None else None,
+        "image_url": get_first_image(p.name)
+    }
+
+
+def build_places_from_plan(plan):
+    return [place_item_to_payload(st.place) for st in plan.stops.select_related("place").all()]
+
+
+def origin_from_plan(plan):
+    return {
+        "address": plan.origin_address,
+        "latitude": float(plan.origin_latitude) if plan.origin_latitude is not None else None,
+        "longitude": float(plan.origin_longitude) if plan.origin_longitude is not None else None,
+    }
+
+
+def is_overnight_for_submission(sub, plan):
+    return (sub.q2 == 2) and bool(plan.start_date and plan.end_date and plan.start_date != plan.end_date)
+
+
+# 직접 경로 생성 - 로컬 알고리즘
+@permission_classes([IsAuthenticated, IsTouristUser])
+class SubmissionBuildRouteLocalView(APIView):
+    def post(self, request):
+        submission_id = request.GET.get("submission_id")
+        if not submission_id:
+            return Response(
+                {
+                    "error": "submission_id를 입력해주세요."
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            sub = (QuestionnaireSubmission.objects.select_related("travel_plan", "user").get(id=int(submission_id), user=request.user))
+        except (QuestionnaireSubmission.DoesNotExist, ValueError):
+            return Response(
+                {
+                    "error": "해당 submission_id에 대한 설문조사 결과가 없습니다."
+                },
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        plan: TravelPlan | None = sub.travel_plan
+        if not plan:
+            return Response(
+                {
+                    "error": "연결된 여행 계획이 없습니다."
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # 입력 구성
+        origin = origin_from_plan(plan)
+        places = build_places_from_plan(plan)
+        overnight = is_overnight_for_submission(sub, plan)
+
+        # 1박 2일이면 숙소 1개 반드시 포함
+        if overnight and not plan.lodging_address:
+            return Response(
+                {
+                    "error": "1박 2일 일정의 경우 숙소 정보가 필요합니다."
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        if overnight:
+            places = ensure_lodging_included(places, plan.lodging_address, plan.lodging_latitude, plan.lodging_longitude)
+
+        # 로컬 NN 정렬
+        ordered = nearest_neighbor_order(origin, places)
+
+        # 1박 2일 분할
+        if overnight:
+            day1, day2 = split_overnight_lists(ordered)
+            routes_out = {
+                "day1": clean_for_response_list(day1),
+                "day2": clean_for_response_list(day2)
+            }
+        else:
+            routes_out = clean_for_response_list(ordered)
+
+        # DB 저장
+        with transaction.atomic():
+            route = save_gpt_route_as_route(routes_out, route_name="나의 여정")
+            sub.route = route
+            sub.save(update_fields=["route"])
+
+        # 응답 조립
+        if overnight and isinstance(routes_out, dict):
+            route_body = {"id": route.id, "name": "나의 여정", "routes": routes_out}
+            top_key = "route_overnight"
+        else:
+            route_body = {"id": route.id, "name": "나의 여정", "routes": routes_out}
+            top_key = "route"
+
+        return Response(
+            {
+                "submission_id": sub.id,
+                "user": {"username": getattr(sub.user, "user_name", getattr(sub.user, "username", "unknown"))},
+                "answers": {"q1": sub.q1, "q2": sub.q2, "q3": sub.q3},
+                "date": {"start_date": sub.start_date, "end_date": sub.end_date},
+                top_key: route_body,
+                "message": "답변완료"
+            },
+            status=status.HTTP_201_CREATED
+        )
 
 
 # 경로 결과 조회
