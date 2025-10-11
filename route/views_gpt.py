@@ -9,7 +9,7 @@ import json
 import logging
 import math
 
-from .models import Route, RouteStop
+from .models import Route, RouteStop, QuestionnaireSubmission, TravelPlan, RouteBuildJob
 from .serializers import *
 from home.models import PlaceItem
 from home.views import get_first_image
@@ -18,7 +18,6 @@ from django.conf import settings
 from rest_framework.decorators import permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from home.permissions import IsTouristUser
-from .tasks import rebuild_route_with_gpt
 
 
 TYPE_LABEL_MAP = dict(PlaceItem.TYPE_CHOICES)
@@ -458,7 +457,10 @@ class SubmissionBuildRoutebyGPTView(APIView):
 
             # 비동기 재생성 태스크 실행
             try:
-                rebuild_route_with_gpt.delay(sub.id) # Celery task
+                RouteBuildJob.objects.get_or_create(
+                    submission_id=sub.id,
+                    status=RouteBuildJob.STATUS_PENDING
+                )
             except Exception:
                 logging.getLogger(__name__).exception("재생성 비동기 태스크 실행 실패")
         
