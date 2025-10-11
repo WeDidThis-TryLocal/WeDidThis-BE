@@ -63,8 +63,8 @@ def clean_for_response_list(lst):
     cleaned = []
     for it in lst:
         base = dict(it)
-        if not base.get("image_url") and base.get("name"):
-            base["image_url"] = get_first_image(base["name"])
+        # if not base.get("image_url") and base.get("name"):
+        #     base["image_url"] = get_first_image(base["name"])
         base = inject_type_label(base)
         cleaned.append(base)
     for idx, it in enumerate(cleaned, 1):
