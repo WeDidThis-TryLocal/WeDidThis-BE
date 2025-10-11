@@ -57,68 +57,6 @@ def is_overnight(submission):
     )
 
 
-def rebuild_route_with_gpt_background(submission_id: int):
-    logger = logging.getLogger(__name__)
-    try:
-        # 스레드 DB 연결 안정화
-        close_old_connections()
-
-        sub = (QuestionnaireSubmission.objects
-               .select_related("travel_plan", "route")
-               .filter(id=submission_id).first())
-        if not sub or not sub.travel_plan:
-            logger.warning(f"[bg] invalid submission {submission_id}")
-            return
-
-        plan = sub.travel_plan
-        origin = origin_from_plan(plan)
-        places = build_places_from_plan(plan)
-        overnight = is_overnight_for_submission(sub, plan)
-        if overnight:
-            places = ensure_lodging_included(
-                places, plan.lodging_address, plan.lodging_latitude, plan.lodging_longitude
-            )
-
-        payload = build_gpt_payload(origin=origin, places=places, overnight=overnight)
-
-        # HTTP와 무관하게 넉넉한 타임아웃
-        gpt_out = call_gpt(GPT_SYSTEM_PROMPT, payload, timeout_sec=120)
-        routes_out = gpt_out.get("routes")
-        if not routes_out:
-            logger.warning(f"[bg] no routes in GPT response for submission {submission_id}")
-            return
-
-        # 기존 route 교체
-        with transaction.atomic():
-            route = sub.route
-            if route is None:
-                route = save_gpt_route_as_route(routes_out, route_name="나의 여정")
-                sub.route = route
-                sub.save(update_fields=["route"])
-            else:
-                RouteStop.objects.filter(route=route).delete()
-                flat = flatten_routes_for_save(routes_out)
-                names = [it.get("name") for it in flat if it.get("name")]
-                place_by_name = {p.name: p for p in PlaceItem.objects.filter(name__in=names)}
-                stops = []
-                for it in flat:
-                    name = it.get("name") or ""
-                    p = place_by_name.get(name)
-                    stops.append(RouteStop(
-                        route=route,
-                        order=it["order"],
-                        place_name=name,
-                        place=p if p else None
-                    ))
-                RouteStop.objects.bulk_create(stops)
-
-        logger.info(f"[bg] submission {submission_id} route updated with GPT result")
-    except Exception as e:
-        logging.getLogger(__name__).exception(f"[bg] rebuild failed for submission {submission_id}: {e}")
-    finally:
-        close_old_connections()
-
-
 def clean_for_response_list(lst):
     cleaned = []
     for it in lst:
@@ -180,7 +118,7 @@ def ensure_lodging_included(items, lodging_address, lat, lon):
     return items + [lodging]
 
 
-def call_gpt(system_prompt, payload):
+def call_gpt(system_prompt, payload, timeout_sec=58):
     client = OpenAI(api_key=settings.OPENAI_API_KEY)
     try:
         resp = client.chat.completions.create(
@@ -190,7 +128,7 @@ def call_gpt(system_prompt, payload):
                 {"role": "user", "content": json.dumps(payload, ensure_ascii=False, separators=(',', ':'))}
             ],
             response_format={"type": "json_object"},
-            timeout=58, # 58초 후 타임아웃
+            timeout=timeout_sec, # 58초 후 타임아웃
             max_retries=0, # 재시도 없음
         )
         return json.loads(resp.choices[0].message.content)
@@ -286,6 +224,68 @@ def split_overnight_lists(ordered_with_rest):
                 break
 
     return day1, day2
+
+
+def rebuild_route_with_gpt_background(submission_id: int):
+    logger = logging.getLogger(__name__)
+    try:
+        # 스레드 DB 연결 안정화
+        close_old_connections()
+
+        sub = (QuestionnaireSubmission.objects
+               .select_related("travel_plan", "route")
+               .filter(id=submission_id).first())
+        if not sub or not sub.travel_plan:
+            logger.warning(f"[bg] invalid submission {submission_id}")
+            return
+
+        plan = sub.travel_plan
+        origin = origin_from_plan(plan)
+        places = build_places_from_plan(plan)
+        overnight = is_overnight_for_submission(sub, plan)
+        if overnight:
+            places = ensure_lodging_included(
+                places, plan.lodging_address, plan.lodging_latitude, plan.lodging_longitude
+            )
+
+        payload = build_gpt_payload(origin=origin, places=places, overnight=overnight)
+
+        # HTTP와 무관하게 넉넉한 타임아웃
+        gpt_out = call_gpt(GPT_SYSTEM_PROMPT, payload, timeout_sec=120)
+        routes_out = gpt_out.get("routes")
+        if not routes_out:
+            logger.warning(f"[bg] no routes in GPT response for submission {submission_id}")
+            return
+
+        # 기존 route 교체
+        with transaction.atomic():
+            route = sub.route
+            if route is None:
+                route = save_gpt_route_as_route(routes_out, route_name="나의 여정")
+                sub.route = route
+                sub.save(update_fields=["route"])
+            else:
+                RouteStop.objects.filter(route=route).delete()
+                flat = flatten_routes_for_save(routes_out)
+                names = [it.get("name") for it in flat if it.get("name")]
+                place_by_name = {p.name: p for p in PlaceItem.objects.filter(name__in=names)}
+                stops = []
+                for it in flat:
+                    name = it.get("name") or ""
+                    p = place_by_name.get(name)
+                    stops.append(RouteStop(
+                        route=route,
+                        order=it["order"],
+                        place_name=name,
+                        place=p if p else None
+                    ))
+                RouteStop.objects.bulk_create(stops)
+
+        logger.info(f"[bg] submission {submission_id} route updated with GPT result")
+    except Exception as e:
+        logging.getLogger(__name__).exception(f"[bg] rebuild failed for submission {submission_id}: {e}")
+    finally:
+        close_old_connections()
 
 
 # 고정 경로 등록
