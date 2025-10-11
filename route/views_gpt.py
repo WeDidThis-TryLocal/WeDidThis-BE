@@ -9,7 +9,7 @@ import json
 import logging
 import math
 
-from .models import Route, RouteStop, QuestionnaireSubmission, TravelPlan, RouteBuildJob
+from .models import Route, RouteStop, QuestionnaireSubmission, TravelPlan
 from .serializers import *
 from home.models import PlaceItem
 from home.views import get_first_image
@@ -456,13 +456,13 @@ class SubmissionBuildRoutebyGPTView(APIView):
                 routes_out = clean_for_response_list(ordered)
 
             # 비동기 재생성 태스크 실행
-            try:
-                RouteBuildJob.objects.get_or_create(
-                    submission_id=sub.id,
-                    status=RouteBuildJob.STATUS_PENDING
-                )
-            except Exception:
-                logging.getLogger(__name__).exception("재생성 비동기 태스크 실행 실패")
+            # try:
+            #     RouteBuildJob.objects.get_or_create(
+            #         submission_id=sub.id,
+            #         status=RouteBuildJob.STATUS_PENDING
+            #     )
+            # except Exception:
+            #     logging.getLogger(__name__).exception("재생성 비동기 태스크 실행 실패")
         
         
         # 3) DB 저장 (Route / RouteStop) + 설문 연결
