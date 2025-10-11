@@ -434,17 +434,34 @@ class SubmissionBuildRoutebyGPTView(APIView):
         if overnight:
             places = ensure_lodging_included(places, plan.lodging_address, plan.lodging_latitude, plan.lodging_longitude)
 
-        # 2) GPT 호출
-        payload = build_gpt_payload(origin=origin, places=places, overnight=overnight)
-        gpt_out = call_gpt(GPT_SYSTEM_PROMPT, payload)
-        routes_out = gpt_out.get("routes")
-        if routes_out is None:
-            return Response(
-                {
-                    "error": "GPT 응답에 routes 데이터가 없습니다."
-                },
-                status=status.HTTP_502_BAD_GATEWAY
-            )
+        # 2) GPT 호출(58초 타임아웃)
+        routes_out = None
+        source = "gpt"
+
+        try:
+            payload = build_gpt_payload(origin=origin, places=places, overnight=overnight)
+            gpt_out = call_gpt(GPT_SYSTEM_PROMPT, payload)
+            routes_out = gpt_out.get("routes")
+            if routes_out is None:
+                raise ValueError("GPT 응답에 routes 필드가 없습니다.")
+        except Exception:
+            source = "logic_fallback"
+            ordered = nearest_neighbor_order(origin, places)
+            if overnight:
+                day1, day2 = split_overnight_lists(ordered)
+                routes_out = {
+                    "day1": clean_for_response_list(day1),
+                    "day2": clean_for_response_list(day2),
+                }
+            else:
+                routes_out = clean_for_response_list(ordered)
+
+            # 비동기 재생성 태스크 실행
+            try:
+                rebuild_route_with_gpt.delay(sub.id) # Celery task
+            except Exception:
+                logging.getLogger(__name__).exception("재생성 비동기 태스크 실행 실패")
+        
         
         # 3) DB 저장 (Route / RouteStop) + 설문 연결
         route = save_gpt_route_as_route(routes_out, route_name="나의 여정")
@@ -475,6 +492,7 @@ class SubmissionBuildRoutebyGPTView(APIView):
                 "answers": {"q1": sub.q1, "q2": sub.q2, "q3": sub.q3},
                 "date": {"start_date": sub.start_date, "end_date": sub.end_date},
                 top_key: route_body,
+                "source": source,
                 "message": "답변완료",
             },
             status=status.HTTP_201_CREATED
