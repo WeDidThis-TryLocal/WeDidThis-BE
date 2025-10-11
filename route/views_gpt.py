@@ -119,17 +119,20 @@ def ensure_lodging_included(items, lodging_address, lat, lon):
 
 
 def call_gpt(system_prompt, payload, timeout_sec=58):
-    client = OpenAI(api_key=settings.OPENAI_API_KEY)
+    client = OpenAI(
+        api_key=settings.OPENAI_API_KEY,
+        max_retries=0,
+        timeout=timeout_sec # 58초 후 타임아웃
+    )
     try:
-        resp = client.chat.completions.create(
+        client_req = client.with_options(timeout=timeout_sec)
+        resp = client_req.chat.completions.create(
             model="gpt-5",
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": json.dumps(payload, ensure_ascii=False, separators=(',', ':'))}
             ],
             response_format={"type": "json_object"},
-            timeout=timeout_sec, # 58초 후 타임아웃
-            max_retries=0, # 재시도 없음
         )
         return json.loads(resp.choices[0].message.content)
     except Exception as e:
