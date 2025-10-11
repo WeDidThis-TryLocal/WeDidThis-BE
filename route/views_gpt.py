@@ -1,13 +1,14 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from django.db import transaction
+from django.db import transaction, close_old_connections
 from django.shortcuts import get_object_or_404
 from django.db.models.functions import Lower
 from openai import OpenAI
 import json
 import logging
 import math
+from concurrent.futures import ThreadPoolExecutor
 
 from .models import Route, RouteStop, QuestionnaireSubmission, TravelPlan
 from .serializers import *
@@ -19,6 +20,7 @@ from rest_framework.decorators import permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from home.permissions import IsTouristUser
 
+EXECUTOR = ThreadPoolExecutor(max_workers=8)
 
 TYPE_LABEL_MAP = dict(PlaceItem.TYPE_CHOICES)
 REST_CODE = PlaceItem.REST
@@ -53,6 +55,68 @@ def is_overnight(submission):
         (submission.q1 == 1 and submission.q2 == 1 and submission.q3 == 2) or
         (submission.q1 == 2 and submission.q2 == 2 and submission.q3 is None)
     )
+
+
+def rebuild_route_with_gpt_background(submission_id: int):
+    logger = logging.getLogger(__name__)
+    try:
+        # 스레드 DB 연결 안정화
+        close_old_connections()
+
+        sub = (QuestionnaireSubmission.objects
+               .select_related("travel_plan", "route")
+               .filter(id=submission_id).first())
+        if not sub or not sub.travel_plan:
+            logger.warning(f"[bg] invalid submission {submission_id}")
+            return
+
+        plan = sub.travel_plan
+        origin = origin_from_plan(plan)
+        places = build_places_from_plan(plan)
+        overnight = is_overnight_for_submission(sub, plan)
+        if overnight:
+            places = ensure_lodging_included(
+                places, plan.lodging_address, plan.lodging_latitude, plan.lodging_longitude
+            )
+
+        payload = build_gpt_payload(origin=origin, places=places, overnight=overnight)
+
+        # HTTP와 무관하게 넉넉한 타임아웃
+        gpt_out = call_gpt(GPT_SYSTEM_PROMPT, payload, timeout_sec=120)
+        routes_out = gpt_out.get("routes")
+        if not routes_out:
+            logger.warning(f"[bg] no routes in GPT response for submission {submission_id}")
+            return
+
+        # 기존 route 교체
+        with transaction.atomic():
+            route = sub.route
+            if route is None:
+                route = save_gpt_route_as_route(routes_out, route_name="나의 여정")
+                sub.route = route
+                sub.save(update_fields=["route"])
+            else:
+                RouteStop.objects.filter(route=route).delete()
+                flat = flatten_routes_for_save(routes_out)
+                names = [it.get("name") for it in flat if it.get("name")]
+                place_by_name = {p.name: p for p in PlaceItem.objects.filter(name__in=names)}
+                stops = []
+                for it in flat:
+                    name = it.get("name") or ""
+                    p = place_by_name.get(name)
+                    stops.append(RouteStop(
+                        route=route,
+                        order=it["order"],
+                        place_name=name,
+                        place=p if p else None
+                    ))
+                RouteStop.objects.bulk_create(stops)
+
+        logger.info(f"[bg] submission {submission_id} route updated with GPT result")
+    except Exception as e:
+        logging.getLogger(__name__).exception(f"[bg] rebuild failed for submission {submission_id}: {e}")
+    finally:
+        close_old_connections()
 
 
 def clean_for_response_list(lst):
@@ -456,13 +520,10 @@ class SubmissionBuildRoutebyGPTView(APIView):
                 routes_out = clean_for_response_list(ordered)
 
             # 비동기 재생성 태스크 실행
-            # try:
-            #     RouteBuildJob.objects.get_or_create(
-            #         submission_id=sub.id,
-            #         status=RouteBuildJob.STATUS_PENDING
-            #     )
-            # except Exception:
-            #     logging.getLogger(__name__).exception("재생성 비동기 태스크 실행 실패")
+            try:
+                EXECUTOR.submit(rebuild_route_with_gpt_background, sub.id)
+            except Exception:
+                logging.getLogger(__name__).exception("재생성 비동기 태스크 실행 실패")
         
         
         # 3) DB 저장 (Route / RouteStop) + 설문 연결
