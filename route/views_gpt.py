@@ -9,6 +9,8 @@ import json
 import logging
 import math
 from concurrent.futures import ThreadPoolExecutor
+from openai import OpenAI, APIConnectionError, APITimeoutError, APIStatusError
+import httpx
 
 from .models import Route, RouteStop, QuestionnaireSubmission, TravelPlan
 from .serializers import *
@@ -118,12 +120,19 @@ def ensure_lodging_included(items, lodging_address, lat, lon):
     return items + [lodging]
 
 
+class GPTTimeoutError(Exception):
+    pass
+
+
 def call_gpt(system_prompt, payload, timeout_sec=58):
+    logger = logging.getLogger(__name__)
+
     client = OpenAI(
         api_key=settings.OPENAI_API_KEY,
         max_retries=0,
         timeout=timeout_sec # 58초 후 타임아웃
     )
+
     try:
         client_req = client.with_options(timeout=timeout_sec)
         resp = client_req.chat.completions.create(
@@ -135,8 +144,19 @@ def call_gpt(system_prompt, payload, timeout_sec=58):
             response_format={"type": "json_object"},
         )
         return json.loads(resp.choices[0].message.content)
-    except Exception as e:
-        logging.getLogger(__name__).exception("OpenAI 호출 실패")
+        # ---- 타임아웃만 별도로 캐치해서 우리 커스텀 예외로 변환 ----
+    except (APITimeoutError, httpx.ReadTimeout, httpx.TimeoutException) as e:
+        logger.warning("OpenAI 호출 타임아웃(%ss): %s", timeout_sec, str(e))
+        raise GPTTimeoutError(f"openai timeout after {timeout_sec}s") from e
+
+    # ---- 네트워크/서버 오류는 다른 예외로 ----
+    except (APIConnectionError, APIStatusError, httpx.HTTPError) as e:
+        logger.error("OpenAI 네트워크/서버 오류: %s", str(e))
+        raise
+
+    # ---- 그 외 예외는 실제 원인 파악 위해 한 번만 스택 출력 ----
+    except Exception:
+        logger.exception("OpenAI 호출 실패(기타 예외)")
         raise
 
 
@@ -254,7 +274,7 @@ def rebuild_route_with_gpt_background(submission_id: int):
         payload = build_gpt_payload(origin=origin, places=places, overnight=overnight)
 
         # HTTP와 무관하게 넉넉한 타임아웃
-        gpt_out = call_gpt(GPT_SYSTEM_PROMPT, payload, timeout_sec=120)
+        gpt_out = call_gpt(GPT_SYSTEM_PROMPT, payload, timeout_sec=300)
         routes_out = gpt_out.get("routes")
         if not routes_out:
             logger.warning(f"[bg] no routes in GPT response for submission {submission_id}")
