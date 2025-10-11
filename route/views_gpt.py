@@ -7,6 +7,7 @@ from django.db.models.functions import Lower
 from openai import OpenAI
 import json
 import logging
+import math
 
 from .models import Route, RouteStop
 from .serializers import *
@@ -17,6 +18,8 @@ from django.conf import settings
 from rest_framework.decorators import permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from home.permissions import IsTouristUser
+from .tasks import rebuild_route_with_gpt
+
 
 TYPE_LABEL_MAP = dict(PlaceItem.TYPE_CHOICES)
 REST_CODE = PlaceItem.REST
@@ -124,6 +127,8 @@ def call_gpt(system_prompt, payload):
                 {"role": "user", "content": json.dumps(payload, ensure_ascii=False, separators=(',', ':'))}
             ],
             response_format={"type": "json_object"},
+            timeout=58, # 58초 후 타임아웃
+            max_retries=0, # 재시도 없음
         )
         return json.loads(resp.choices[0].message.content)
     except Exception as e:
@@ -163,6 +168,61 @@ def origin_from_plan(plan):
 def is_overnight_for_submission(sub, plan):
     # q2 == 2 (1박2일) 이고 날짜도 실제로 다르면 overnight
     return (sub.q2 == 2) and bool(plan.start_date and plan.end_date and plan.start_date != plan.end_date)
+
+
+def haversine_km(lat1, lon1, lat2, lon2):
+    """Harversine distance (km) - None 좌표가 있으면 큰 값 반환하여 선택되지 않게."""
+    if None in (lat1, lon1, lat2, lon2):
+        return float('inf')
+    R = 6371  # 지구 반경 (km)
+    phi1, phi2 = math.radians(lat1), math.radians(lat2)
+    dphi = math.radians(lat2 - lat1)
+    dlmb = math.radians(lon2 - lon1)
+    a = math.sin(dphi / 2) ** 2 + math.cos(phi1) * math.cos(phi2) * math.sin(dlmb / 2) ** 2
+    return 2 * R * math.asin(math.sqrt(a))
+
+
+def nearest_neighbor_order(origin, places):
+    remaining = places[:]
+    cur = {"latitude": origin.get("latitude"), "longitude": origin.get("longitude")}
+    ordered = []
+    while remaining:
+        # 가장 가까운 장소 찾기
+        best = None
+        best_d = float('inf')
+        for it in remaining:
+            d = haversine_km(cur["latitude"], cur["longitude"], it.get("latitude"), it.get("longitude"))
+            if d < best_d:
+                best, best_d = it, d
+            elif d == best_d:
+                k1 = (it.get("name") or "", it.get("address") or "")
+                k2 = (best.get("name") or "", best.get("address") or "")
+                if k1 < k2:
+                    best = it
+        ordered.append(best)
+        cur = {"latitude": best.get("latitude"), "longitude": best.get("longitude")}
+        remaining.remove(best)
+    return ordered
+
+
+def split_overnight_lists(ordered_with_rest):
+    rest_idx = next((i for i, it in enumerate(ordered_with_rest) if it.get("type") == REST_CODE), None)
+    if rest_idx is None:
+        return ordered_with_rest, []
+    
+    day1 = ordered_with_rest[:rest_idx + 1]  # 숙소 포함
+    day2 = ordered_with_rest[rest_idx + 1:]  # 숙소 이후
+
+    non_rest_count = sum(1 for it in ordered_with_rest if it.get("type") != REST_CODE)
+    if non_rest_count >= 2 and len(day2) == 0:
+        # 숙소 이후 일정이 없으면, day1의 마지막 장소를 day2로 이동
+        for i in range(len(day1) -2, -1, -1):
+            if day1[i].get("type") != REST_CODE:
+                move = day1.pop(i)
+                day2 = [move] + day2
+                break
+
+    return day1, day2
 
 
 # 고정 경로 등록
